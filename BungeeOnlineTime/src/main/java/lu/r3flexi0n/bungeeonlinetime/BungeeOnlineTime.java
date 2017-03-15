@@ -12,7 +12,6 @@ import lu.r3flexi0n.bungeeonlinetime.command.OnlineTimeCommand;
 import lu.r3flexi0n.bungeeonlinetime.utils.MySQL;
 import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -145,11 +144,9 @@ public class BungeeOnlineTime extends Plugin {
         getProxy().getScheduler().schedule(this, new Runnable() {
             public void run() {
                 ArrayList<String> sql = new ArrayList<String>();
-                ServerInfo currentServer;
                 for (ProxiedPlayer players : getProxy().getPlayers()) {
                     if (players.hasPermission("onlinetime.save")) {
-                        currentServer = players.getServer().getInfo();
-                        if (currentServer != null && !disabledServers.contains(currentServer.getName())) {
+                        if (players.getServer() != null && players.getServer().getInfo() != null && !disabledServers.contains(players.getServer().getInfo().getName())) {
                             sql.add("INSERT INTO onlineTime (UUID, Name, OnlineTime) VALUES ('" + players.getUniqueId() + "','" + players.getName() + "','1') ON DUPLICATE KEY UPDATE Name = '" + players.getName() + "', OnlineTime = OnlineTime + 1;");
                         }
                     }

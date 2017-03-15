@@ -28,7 +28,7 @@ public class MySQL {
 
     public void openConnection() throws Exception {
         Class.forName("com.mysql.jdbc.Driver");
-        connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database + "?useSSL=false", this.username, this.password);
+        connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database, this.username, this.password);
     }
 
     public void closeConnection() {
