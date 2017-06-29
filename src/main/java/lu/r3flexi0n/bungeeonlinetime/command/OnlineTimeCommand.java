@@ -43,7 +43,6 @@ public class OnlineTimeCommand extends Command {
 
                 } catch (SQLException | ClassNotFoundException ex) {
                     player.sendMessage(BungeeOnlineTime.error);
-                    ex.printStackTrace();
                 }
             });
 
@@ -84,7 +83,6 @@ public class OnlineTimeCommand extends Command {
 
                 } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
-                    ex.printStackTrace();
                 }
             });
 
@@ -113,7 +111,6 @@ public class OnlineTimeCommand extends Command {
 
                 } catch (SQLException | ClassNotFoundException | IOException ex) {
                     player.sendMessage(BungeeOnlineTime.error);
-                    ex.printStackTrace();
                 }
             });
 
@@ -139,7 +136,6 @@ public class OnlineTimeCommand extends Command {
 
                 } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
-                    ex.printStackTrace();
                 }
             });
 
@@ -168,7 +164,6 @@ public class OnlineTimeCommand extends Command {
 
                 } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
-                    ex.printStackTrace();
                 }
             });
 
