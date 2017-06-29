@@ -2,12 +2,12 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import lu.r3flexi0n.bungeeonlinetime.command.OnlineTimeCommand;
 import lu.r3flexi0n.bungeeonlinetime.utils.MySQL;
 import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
@@ -29,7 +29,7 @@ public class BungeeOnlineTime extends Plugin {
     public static File configFile;
     public static ConfigurationProvider configurationProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
-    public static List<String> disabledServers = new ArrayList<String>();
+    public static List<String> disabledServers;
 
     public static String lastReset;
 
@@ -37,29 +37,23 @@ public class BungeeOnlineTime extends Plugin {
             topPlayers, topPlayersBelow, onlyPlayer, error;
 
     public void onEnable() {
+
         instance = this;
 
         try {
             createConfig();
             loadConfig();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
             return;
         }
 
         try {
             mysql = new MySQL(host, port, database, username, password);
             mysql.openConnection();
-
-            mysql.updateSync("CREATE TABLE IF NOT EXISTS onlineTime (UUID VARCHAR(36) UNIQUE, Name VARCHAR(16), OnlineTime INT);");
-
-            ResultSet resultset = mysql.querySync("SHOW TABLES LIKE 'BungeeOnlineTime';"); //old Table exists
-            if (resultset.next()) {
-                mysql.updateSync("INSERT INTO onlineTime SELECT UUID, Player, OnlineTime FROM BungeeOnlineTime GROUP BY UUID;");
-                mysql.updateSync("DROP TABLE BungeeOnlineTime;");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            mysql.createTable();
+        } catch (ClassNotFoundException | SQLException ex) {
+            ex.printStackTrace();
             return;
         }
 
@@ -68,7 +62,7 @@ public class BungeeOnlineTime extends Plugin {
         startScheduler();
     }
 
-    public void createConfig() throws IOException {
+    private void createConfig() throws IOException {
 
         File folder = new File(getDataFolder().getPath());
         if (!folder.exists()) {
@@ -113,7 +107,7 @@ public class BungeeOnlineTime extends Plugin {
         }
     }
 
-    public void loadConfig() throws IOException {
+    private void loadConfig() throws IOException {
         Configuration config = configurationProvider.load(configFile);
 
         lastReset = config.getString("lastReset");
@@ -124,9 +118,7 @@ public class BungeeOnlineTime extends Plugin {
         username = config.getString("MySQL.username");
         password = config.getString("MySQL.password");
 
-        for (String servers : config.getStringList("Settings.disabledServers")) {
-            disabledServers.add(servers);
-        }
+        disabledServers = config.getStringList("Settings.disabledServers");
 
         noPermission = ChatColor.translateAlternateColorCodes('&', config.getString("Language.noPermission"));
         playerNotFound = ChatColor.translateAlternateColorCodes('&', config.getString("Language.playerNotFound"));
@@ -140,23 +132,31 @@ public class BungeeOnlineTime extends Plugin {
         error = ChatColor.translateAlternateColorCodes('&', config.getString("Language.error"));
     }
 
-    public void startScheduler() {
+    private void startScheduler() {
         getProxy().getScheduler().schedule(this, new Runnable() {
             public void run() {
-                ArrayList<String> sql = new ArrayList<String>();
+
+                ArrayList<UUID> uuids = new ArrayList<UUID>();
                 for (ProxiedPlayer players : getProxy().getPlayers()) {
                     if (players.hasPermission("onlinetime.save")) {
                         if (players.getServer() != null && players.getServer().getInfo() != null && !disabledServers.contains(players.getServer().getInfo().getName())) {
-                            sql.add("INSERT INTO onlineTime (UUID, Name, OnlineTime) VALUES ('" + players.getUniqueId() + "','" + players.getName() + "','1') ON DUPLICATE KEY UPDATE Name = '" + players.getName() + "', OnlineTime = OnlineTime + 1;");
+                            uuids.add(players.getUniqueId());
                         }
                     }
                 }
-                if (sql.size() > 0) {
-                    mysql.batchAsync(sql, new Consumer<Boolean>() {
-                        public void accept(Boolean t) {
-                        }
-                    });
+
+                if (uuids.size() == 0) {
+                    return;
                 }
+
+                getProxy().getScheduler().runAsync(instance, () -> {
+                    try {
+                        mysql.addOnlineTime(uuids);
+                    } catch (SQLException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                    }
+                });
+
             }
         }, 1, 1, TimeUnit.MINUTES);
     }
