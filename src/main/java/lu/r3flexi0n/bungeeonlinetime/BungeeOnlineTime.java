@@ -33,8 +33,8 @@ public class BungeeOnlineTime extends Plugin {
 
     public static String lastReset;
 
-    public static String noPermission, playerNotFound, onlineTime, resetDatabase, resetPlayer, topPlayersAbove,
-            topPlayers, topPlayersBelow, onlyPlayer, error;
+    public static String noPermission, playerNotFound, onlineTime, resetDatabase, resetPlayer,
+            topWait, topPlayersAbove, topPlayers, topPlayersBelow, onlyPlayer, error;
 
     public void onEnable() {
 
@@ -92,6 +92,7 @@ public class BungeeOnlineTime extends Plugin {
         addDefault(config, "Language.onlineTime", "&7Since &6%DATE%&7, &6%PLAYER% &7has been online for &6%HOURS% &7hours and &6%MINUTES% &7minutes.");
         addDefault(config, "Language.resetDatabase", "&7The &6database &7has been &6reset&7.");
         addDefault(config, "Language.resetPlayer", "&6%PLAYER%&7s onlinetime has been &6reset&7.");
+        addDefault(config, "Language.topWait", "&7The Top 10 is loading. Please wait...");
         addDefault(config, "Language.topPlayersAbove", "&6[] &7Top 10 players since %DATE% &6[]");
         addDefault(config, "Language.topPlayers", "&6%PLAYER% &7>> &6%HOURS% &7hours, &6%MINUTES% &7minutes");
         addDefault(config, "Language.topPlayersBelow", "&6[] &7Top 10 players since %DATE% &6[]");
@@ -125,6 +126,7 @@ public class BungeeOnlineTime extends Plugin {
         onlineTime = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlineTime"));
         resetDatabase = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetDatabase"));
         resetPlayer = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetPlayer"));
+        topWait = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topWait"));
         topPlayersAbove = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topPlayersAbove"));
         topPlayers = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topPlayers"));
         topPlayersBelow = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topPlayersBelow"));

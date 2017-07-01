@@ -62,7 +62,8 @@ public class OnlineTimeCommand extends Command {
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
-                    sender.sendMessage(BungeeOnlineTime.topPlayersAbove.replace("%DATE%", BungeeOnlineTime.lastReset));
+                    sender.sendMessage(BungeeOnlineTime.topWait);
+
                     ArrayList<String> top10 = BungeeOnlineTime.mysql.getTopOnlineTimes();
                     String[] data;
                     UUID uuid;
@@ -70,6 +71,7 @@ public class OnlineTimeCommand extends Command {
                     int hours;
                     int minutes;
                     String name;
+                    ArrayList<String> messages = new ArrayList<String>();
                     for (String timeData : top10) {
                         data = timeData.split(",");
                         uuid = UUID.fromString(data[0]);
@@ -77,7 +79,12 @@ public class OnlineTimeCommand extends Command {
                         hours = time / 60;
                         minutes = time % 60;
                         name = Utils.getName(uuid);
-                        sender.sendMessage(BungeeOnlineTime.topPlayers.replace("%PLAYER%", name).replace("%HOURS%", String.valueOf(hours)).replace("%MINUTES%", String.valueOf(minutes)));
+                        messages.add(BungeeOnlineTime.topPlayers.replace("%PLAYER%", name).replace("%HOURS%", String.valueOf(hours)).replace("%MINUTES%", String.valueOf(minutes)));
+                    }
+
+                    sender.sendMessage(BungeeOnlineTime.topPlayersAbove.replace("%DATE%", BungeeOnlineTime.lastReset));
+                    for (String msg : messages) {
+                        sender.sendMessage(msg);
                     }
                     sender.sendMessage(BungeeOnlineTime.topPlayersBelow.replace("%DATE%", BungeeOnlineTime.lastReset));
 
