@@ -3,16 +3,7 @@ package lu.r3flexi0n.bungeeonlinetime;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import lu.r3flexi0n.bungeeonlinetime.command.OnlineTimeCommand;
-import lu.r3flexi0n.bungeeonlinetime.utils.MySQL;
-import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -29,13 +20,7 @@ public class BungeeOnlineTime extends Plugin {
     public static File configFile;
     public static ConfigurationProvider configurationProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
-    public static List<String> disabledServers;
-
-    public static String lastReset;
-
-    public static String noPermission, playerNotFound, onlineTime, resetDatabase, resetPlayer,
-            topWait, topPlayersAbove, topPlayers, topPlayersBelow, onlyPlayer, error;
-
+    @Override
     public void onEnable() {
 
         instance = this;
@@ -44,7 +29,7 @@ public class BungeeOnlineTime extends Plugin {
             createConfig();
             loadConfig();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.out.println("[BungeeOnlineTime] Error while creating/loading config: " + ex.getMessage());
             return;
         }
 
@@ -53,13 +38,12 @@ public class BungeeOnlineTime extends Plugin {
             mysql.openConnection();
             mysql.createTable();
         } catch (ClassNotFoundException | SQLException ex) {
-            ex.printStackTrace();
+            System.out.println("[BungeeOnlineTime] Error while connecting to MySQL: " + ex.getMessage());
             return;
         }
 
         getProxy().getPluginManager().registerCommand(this, new OnlineTimeCommand("onlinetime", null, "ot"));
-
-        startScheduler();
+        getProxy().getPluginManager().registerListener(this, new OnlineTimeListener());
     }
 
     private void createConfig() throws IOException {
@@ -77,27 +61,32 @@ public class BungeeOnlineTime extends Plugin {
 
         Configuration config = configurationProvider.load(configFile);
 
-        addDefault(config, "lastReset", Utils.getDate());
-
         addDefault(config, "MySQL.host", "localhost");
         addDefault(config, "MySQL.port", 3306);
         addDefault(config, "MySQL.database", "minecraft");
         addDefault(config, "MySQL.username", "player");
         addDefault(config, "MySQL.password", "abc123");
 
-        addDefault(config, "Settings.disabledServers", Arrays.asList("lobby", "testserver"));
+        addDefault(config, "Settings.dateFormat", dateFormat);
 
-        addDefault(config, "Language.noPermission", "&7You do not have access to this command.");
-        addDefault(config, "Language.playerNotFound", "&7The player '&6%PLAYER%&7' does not exist.");
-        addDefault(config, "Language.onlineTime", "&7Since &6%DATE%&7, &6%PLAYER% &7has been online for &6%HOURS% &7hours and &6%MINUTES% &7minutes.");
-        addDefault(config, "Language.resetDatabase", "&7The &6database &7has been &6reset&7.");
-        addDefault(config, "Language.resetPlayer", "&6%PLAYER%&7s onlinetime has been &6reset&7.");
-        addDefault(config, "Language.topWait", "&7The Top 10 is loading. Please wait...");
-        addDefault(config, "Language.topPlayersAbove", "&6[] &7Top 10 players since %DATE% &6[]");
-        addDefault(config, "Language.topPlayers", "&6%PLAYER% &7>> &6%HOURS% &7hours, &6%MINUTES% &7minutes");
-        addDefault(config, "Language.topPlayersBelow", "&6[] &7Top 10 players since %DATE% &6[]");
-        addDefault(config, "Language.onlyPlayer", "This command can only be executed by players.");
-        addDefault(config, "Language.error", "&7An error occured.");
+        addDefault(config, "Language.onlyPlayer", onlyPlayer);
+        addDefault(config, "Language.noPermission", noPermission);
+        addDefault(config, "Language.error", error);
+        addDefault(config, "Language.errorSaving", errorSaving);
+        addDefault(config, "Language.playerNotFound", playerNotFound);
+        addDefault(config, "Language.wrongFormat", wrongFormat);
+        addDefault(config, "Language.onlineTime", onlineTime);
+        addDefault(config, "Language.onlineTimeSince", onlineTimeSince);
+        addDefault(config, "Language.topTimeAbove", topTimeAbove);
+        addDefault(config, "Language.topTime", topTime);
+        addDefault(config, "Language.topTimeBelow", topTimeBelow);
+        addDefault(config, "Language.topTimeSinceAbove", topTimeSinceAbove);
+        addDefault(config, "Language.topTimeSince", topTimeSince);
+        addDefault(config, "Language.topTimeSinceBelow", topTimeSinceBelow);
+        addDefault(config, "Language.resetAll", resetAll);
+        addDefault(config, "Language.resetPlayer", resetPlayer);
+        addDefault(config, "Language.resetAllBefore", resetAllBefore);
+        addDefault(config, "Language.resetPlayerBefore", resetPlayerBefore);
 
         configurationProvider.save(config, configFile);
     }
@@ -111,55 +100,52 @@ public class BungeeOnlineTime extends Plugin {
     private void loadConfig() throws IOException {
         Configuration config = configurationProvider.load(configFile);
 
-        lastReset = config.getString("lastReset");
-
         host = config.getString("MySQL.host");
         port = config.getInt("MySQL.port");
         database = config.getString("MySQL.database");
         username = config.getString("MySQL.username");
         password = config.getString("MySQL.password");
 
-        disabledServers = config.getStringList("Settings.disabledServers");
+        dateFormat = config.getString("Settings.dateFormat");
 
-        noPermission = ChatColor.translateAlternateColorCodes('&', config.getString("Language.noPermission"));
-        playerNotFound = ChatColor.translateAlternateColorCodes('&', config.getString("Language.playerNotFound"));
-        onlineTime = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlineTime"));
-        resetDatabase = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetDatabase"));
-        resetPlayer = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetPlayer"));
-        topWait = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topWait"));
-        topPlayersAbove = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topPlayersAbove"));
-        topPlayers = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topPlayers"));
-        topPlayersBelow = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topPlayersBelow"));
         onlyPlayer = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlyPlayer"));
+        noPermission = ChatColor.translateAlternateColorCodes('&', config.getString("Language.noPermission"));
         error = ChatColor.translateAlternateColorCodes('&', config.getString("Language.error"));
+        errorSaving = ChatColor.translateAlternateColorCodes('&', config.getString("Language.errorSaving"));
+        playerNotFound = ChatColor.translateAlternateColorCodes('&', config.getString("Language.playerNotFound"));
+        wrongFormat = ChatColor.translateAlternateColorCodes('&', config.getString("Language.wrongFormat"));
+        onlineTime = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlineTime"));
+        onlineTimeSince = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlineTimeSince"));
+        topTimeAbove = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeAbove"));
+        topTime = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTime"));
+        topTimeBelow = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeBelow"));
+        topTimeSinceAbove = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeSinceAbove"));
+        topTimeSince = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeSince"));
+        topTimeSinceBelow = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeSinceBelow"));
+        resetAll = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetAll"));
+        resetPlayer = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetPlayer"));
+        resetAllBefore = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetAllBefore"));
+        resetPlayerBefore = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetPlayerBefore"));
     }
 
-    private void startScheduler() {
-        getProxy().getScheduler().schedule(this, new Runnable() {
-            public void run() {
+    public static String dateFormat = "dd/MM/yyyy";
 
-                ArrayList<UUID> uuids = new ArrayList<UUID>();
-                for (ProxiedPlayer players : getProxy().getPlayers()) {
-                    if (players.hasPermission("onlinetime.save")) {
-                        if (players.getServer() != null && players.getServer().getInfo() != null && !disabledServers.contains(players.getServer().getInfo().getName())) {
-                            uuids.add(players.getUniqueId());
-                        }
-                    }
-                }
-
-                if (uuids.size() == 0) {
-                    return;
-                }
-
-                getProxy().getScheduler().runAsync(instance, () -> {
-                    try {
-                        mysql.addOnlineTime(uuids);
-                    } catch (SQLException | ClassNotFoundException ex) {
-                        ex.printStackTrace();
-                    }
-                });
-
-            }
-        }, 1, 1, TimeUnit.MINUTES);
-    }
+    public static String onlyPlayer = "&7This command can only be executed by players.";
+    public static String noPermission = "&7You do not have access to this command.";
+    public static String error = "&7An error occured.";
+    public static String errorSaving = "&7Error while saving your onlinetime.";
+    public static String playerNotFound = "&7Player '&6%PLAYER%&7' was not found.";
+    public static String wrongFormat = "&7Wrong format: Enter the date like this &6%FORMAT%&7.";
+    public static String onlineTime = "&6%PLAYER%&7's onlinetime: &6%HOURS%&7h &6%MINUTES%&7min";
+    public static String onlineTimeSince = "&6%PLAYER%&7's onlinetime since &6%DATE%&7: &6%HOURS%&7h &6%MINUTES%&7min";
+    public static String topTimeAbove = "&7====== &6Top 10 &7======";
+    public static String topTime = "&6%PLAYER%&7: &6%HOURS%&7h &6%MINUTES%&7min";
+    public static String topTimeBelow = "&7====== &6Top 10 &7======";
+    public static String topTimeSinceAbove = "&7=== &6Top 10 &7since &6%DATE% &7===";
+    public static String topTimeSince = "&6%PLAYER%&7: &6%HOURS%&7h &6%MINUTES%&7min";
+    public static String topTimeSinceBelow = "&7=== &6Top 10 &7since &6%DATE% &7===";
+    public static String resetAll = "&7The database has been reset.";
+    public static String resetPlayer = "&6%PLAYER%&7's onlinetime has been reset.";
+    public static String resetAllBefore = "&7All entries before &6%DATE% &7have been removed.";
+    public static String resetPlayerBefore = "&6%PLAYER%&7's onlinetime before &6%DATE% &7has been removed.";
 }
