@@ -321,8 +321,8 @@ public class OnlineTimeCommand extends Command {
             player.sendMessage("§7/onlinetime");
             player.sendMessage("§7/onlinetime get <player> [since]");
             player.sendMessage("§7/onlinetime top [since]");
-            player.sendMessage("§7/onlinetime reset <player> [since]");
-            player.sendMessage("§7/onlinetime resetall [since]");
+            player.sendMessage("§7/onlinetime reset <player> [before]");
+            player.sendMessage("§7/onlinetime resetall [before]");
         }
     }
 }
