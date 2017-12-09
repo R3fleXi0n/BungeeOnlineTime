@@ -228,7 +228,7 @@ public class OnlineTimeCommand extends Command {
 
         } else if (args.length == 2 && args[0].equalsIgnoreCase("resetall")) {
 
-            if (!player.hasPermission("onlinetime.resetall.since")) {
+            if (!player.hasPermission("onlinetime.resetall.before")) {
                 player.sendMessage(BungeeOnlineTime.noPermission);
                 return;
             }
@@ -282,7 +282,7 @@ public class OnlineTimeCommand extends Command {
 
         } else if (args.length == 3 && args[0].equalsIgnoreCase("reset")) {
 
-            if (!player.hasPermission("onlinetime.reset")) {
+            if (!player.hasPermission("onlinetime.reset.before")) {
                 player.sendMessage(BungeeOnlineTime.noPermission);
                 return;
             }
