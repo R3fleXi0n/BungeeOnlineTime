@@ -57,11 +57,14 @@ public class MySQL {
         }
 
         int onlineTime = 0;
+        if (OnlineTimeListener.joinTimes.containsKey(uuid)) {
+            onlineTime = (int) ((System.currentTimeMillis() - OnlineTimeListener.joinTimes.get(uuid)) / 1000);
+        }
 
         Statement statement = getConnection().createStatement();
         ResultSet resultset = statement.executeQuery(sql);
         while (resultset.next()) {
-            onlineTime = (int) (resultset.getLong("time") / 1000);
+            onlineTime += (int) (resultset.getLong("time") / 1000);
         }
 
         resultset.close();

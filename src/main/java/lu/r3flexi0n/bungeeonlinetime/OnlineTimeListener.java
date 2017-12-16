@@ -12,7 +12,7 @@ import net.md_5.bungee.event.EventHandler;
 
 public class OnlineTimeListener implements Listener {
 
-    private final HashMap<UUID, Long> joinTimes = new HashMap<>();
+    public static final HashMap<UUID, Long> joinTimes = new HashMap<>();
 
     @EventHandler
     public void onJoin(PostLoginEvent e) {
