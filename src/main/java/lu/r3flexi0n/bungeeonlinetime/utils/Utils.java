@@ -1,4 +1,4 @@
-package lu.r3flexi0n.bungeeonlinetime;
+package lu.r3flexi0n.bungeeonlinetime.utils;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -13,6 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
+import lu.r3flexi0n.bungeeonlinetime.BungeeOnlineTime;
 
 public class Utils {
 

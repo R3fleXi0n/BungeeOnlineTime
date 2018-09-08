@@ -1,12 +1,11 @@
 package lu.r3flexi0n.bungeeonlinetime;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.UUID;
+import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -37,7 +36,7 @@ public class OnlineTimeCommand extends Command {
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
-                    long seconds = BungeeOnlineTime.mysql.getOnlineTime(player.getUniqueId(), 0);
+                    long seconds = BungeeOnlineTime.sql.getOnlineTime(player.getUniqueId(), 0);
                     int hours = (int) (seconds / 3600);
                     int minutes = (int) ((seconds % 3600) / 60);
 
@@ -46,8 +45,9 @@ public class OnlineTimeCommand extends Command {
                             .replace("%HOURS%", String.valueOf(hours))
                             .replace("%MINUTES%", String.valueOf(minutes)));
 
-                } catch (SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -68,7 +68,7 @@ public class OnlineTimeCommand extends Command {
                         return;
                     }
 
-                    long seconds = BungeeOnlineTime.mysql.getOnlineTime(uuid, 0);
+                    long seconds = BungeeOnlineTime.sql.getOnlineTime(uuid, 0);
                     int hours = (int) (seconds / 3600);
                     int minutes = (int) ((seconds % 3600) / 60);
 
@@ -77,8 +77,9 @@ public class OnlineTimeCommand extends Command {
                             .replace("%HOURS%", String.valueOf(hours))
                             .replace("%MINUTES%", String.valueOf(minutes)));
 
-                } catch (IOException | SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -108,7 +109,7 @@ public class OnlineTimeCommand extends Command {
                         return;
                     }
 
-                    long seconds = BungeeOnlineTime.mysql.getOnlineTime(uuid, date.getTime());
+                    long seconds = BungeeOnlineTime.sql.getOnlineTime(uuid, date.getTime());
                     int hours = (int) (seconds / 3600);
                     int minutes = (int) ((seconds % 3600) / 60);
 
@@ -118,8 +119,9 @@ public class OnlineTimeCommand extends Command {
                             .replace("%HOURS%", String.valueOf(hours))
                             .replace("%MINUTES%", String.valueOf(minutes)));
 
-                } catch (IOException | SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -133,7 +135,7 @@ public class OnlineTimeCommand extends Command {
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
-                    LinkedHashMap<UUID, Long> top = BungeeOnlineTime.mysql.getTopOnlineTimes(10, 0);
+                    LinkedHashMap<UUID, Long> top = BungeeOnlineTime.sql.getTopOnlineTimes(10, 0);
 
                     StringBuilder builder = new StringBuilder();
                     builder.append(BungeeOnlineTime.topTimeAbove);
@@ -141,6 +143,9 @@ public class OnlineTimeCommand extends Command {
                     for (Entry<UUID, Long> entries : top.entrySet()) {
 
                         String name = Utils.getName(entries.getKey());
+                        if (name == null) {
+                            name = "?";
+                        }
 
                         long seconds = entries.getValue();
                         int hours = (int) (seconds / 3600);
@@ -156,8 +161,9 @@ public class OnlineTimeCommand extends Command {
 
                     player.sendMessage(builder.toString());
 
-                } catch (IOException | SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -180,7 +186,7 @@ public class OnlineTimeCommand extends Command {
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
-                    LinkedHashMap<UUID, Long> top = BungeeOnlineTime.mysql.getTopOnlineTimes(10, date.getTime());
+                    LinkedHashMap<UUID, Long> top = BungeeOnlineTime.sql.getTopOnlineTimes(10, date.getTime());
 
                     StringBuilder builder = new StringBuilder();
                     builder.append(BungeeOnlineTime.topTimeSinceAbove.replace("%DATE%", args[1]));
@@ -188,6 +194,9 @@ public class OnlineTimeCommand extends Command {
                     for (Entry<UUID, Long> entries : top.entrySet()) {
 
                         String name = Utils.getName(entries.getKey());
+                        if (name == null) {
+                            name = "?";
+                        }
 
                         long seconds = entries.getValue();
                         int hours = (int) (seconds / 3600);
@@ -203,8 +212,9 @@ public class OnlineTimeCommand extends Command {
 
                     player.sendMessage(builder.toString());
 
-                } catch (IOException | SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -218,11 +228,12 @@ public class OnlineTimeCommand extends Command {
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
-                    BungeeOnlineTime.mysql.resetAll(System.currentTimeMillis());
+                    BungeeOnlineTime.sql.resetAll(System.currentTimeMillis());
                     player.sendMessage(BungeeOnlineTime.resetAll);
 
-                } catch (SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -245,12 +256,13 @@ public class OnlineTimeCommand extends Command {
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
-                    BungeeOnlineTime.mysql.resetAll(date.getTime());
+                    BungeeOnlineTime.sql.resetAll(date.getTime());
                     player.sendMessage(BungeeOnlineTime.resetAllBefore
                             .replace("%DATE%", args[1]));
 
-                } catch (SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -271,12 +283,13 @@ public class OnlineTimeCommand extends Command {
                         return;
                     }
 
-                    BungeeOnlineTime.mysql.reset(uuid, System.currentTimeMillis());
+                    BungeeOnlineTime.sql.reset(uuid, System.currentTimeMillis());
                     player.sendMessage(BungeeOnlineTime.resetPlayer
                             .replace("%PLAYER%", args[1]));
 
-                } catch (IOException | SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 
@@ -306,13 +319,14 @@ public class OnlineTimeCommand extends Command {
                         return;
                     }
 
-                    BungeeOnlineTime.mysql.reset(uuid, date.getTime());
+                    BungeeOnlineTime.sql.reset(uuid, date.getTime());
                     player.sendMessage(BungeeOnlineTime.resetPlayerBefore
                             .replace("%PLAYER%", args[1])
                             .replace("%DATE%", args[2]));
 
-                } catch (IOException | SQLException | ClassNotFoundException ex) {
+                } catch (Exception ex) {
                     player.sendMessage(BungeeOnlineTime.error);
+                    ex.printStackTrace();
                 }
             });
 

@@ -2,7 +2,9 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
+import lu.r3flexi0n.bungeeonlinetime.database.MySQL;
+import lu.r3flexi0n.bungeeonlinetime.database.SQL;
+import lu.r3flexi0n.bungeeonlinetime.database.SQLite;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
@@ -13,12 +15,17 @@ public class BungeeOnlineTime extends Plugin {
 
     public static BungeeOnlineTime instance;
 
-    public static MySQL mysql;
+    public static SQL sql;
+
+    public static boolean mysql = false;
+    public static String dateFormat = "dd/MM/yyyy";
+    public static String commandAliases = "ot,pt,playtime";
+
     private String host, database, username, password;
     private Integer port;
 
     public static File configFile;
-    public static ConfigurationProvider configurationProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
+    public static ConfigurationProvider configProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
     @Override
     public void onEnable() {
@@ -29,20 +36,27 @@ public class BungeeOnlineTime extends Plugin {
             createConfig();
             loadConfig();
         } catch (IOException ex) {
-            System.out.println("[BungeeOnlineTime] Error while creating/loading config: " + ex.getMessage());
+            System.out.println("[BungeeOnlineTime] Error while creating/loading config.");
+            ex.printStackTrace();
             return;
         }
 
         try {
-            mysql = new MySQL(host, port, database, username, password);
-            mysql.openConnection();
-            mysql.createTable();
-        } catch (ClassNotFoundException | SQLException ex) {
-            System.out.println("[BungeeOnlineTime] Error while connecting to MySQL: " + ex.getMessage());
+            if (mysql) {
+                sql = new MySQL(host, port, database, username, password);
+            } else {
+                sql = new SQLite(new File(getDataFolder(), "BungeeOnlineTime.db"));
+            }
+
+            sql.openConnection();
+            sql.createTable();
+        } catch (Exception ex) {
+            System.out.println("[BungeeOnlineTime] Error while connecting to SQL.");
+            ex.printStackTrace();
             return;
         }
 
-        getProxy().getPluginManager().registerCommand(this, new OnlineTimeCommand("onlinetime", null, "ot"));
+        getProxy().getPluginManager().registerCommand(this, new OnlineTimeCommand("onlinetime", null, commandAliases.split(",")));
         getProxy().getPluginManager().registerListener(this, new OnlineTimeListener());
     }
 
@@ -59,15 +73,17 @@ public class BungeeOnlineTime extends Plugin {
             configFile.createNewFile();
         }
 
-        Configuration config = configurationProvider.load(configFile);
+        Configuration config = configProvider.load(configFile);
+
+        addDefault(config, "Settings.mysql", mysql);
+        addDefault(config, "Settings.dateFormat", dateFormat);
+        addDefault(config, "Settings.commandAliases", commandAliases);
 
         addDefault(config, "MySQL.host", "localhost");
         addDefault(config, "MySQL.port", 3306);
         addDefault(config, "MySQL.database", "minecraft");
         addDefault(config, "MySQL.username", "player");
         addDefault(config, "MySQL.password", "abc123");
-
-        addDefault(config, "Settings.dateFormat", dateFormat);
 
         addDefault(config, "Language.onlyPlayer", onlyPlayer);
         addDefault(config, "Language.noPermission", noPermission);
@@ -88,7 +104,7 @@ public class BungeeOnlineTime extends Plugin {
         addDefault(config, "Language.resetAllBefore", resetAllBefore);
         addDefault(config, "Language.resetPlayerBefore", resetPlayerBefore);
 
-        configurationProvider.save(config, configFile);
+        configProvider.save(config, configFile);
     }
 
     private void addDefault(Configuration config, String path, Object value) {
@@ -98,15 +114,19 @@ public class BungeeOnlineTime extends Plugin {
     }
 
     private void loadConfig() throws IOException {
-        Configuration config = configurationProvider.load(configFile);
+        Configuration config = configProvider.load(configFile);
 
-        host = config.getString("MySQL.host");
-        port = config.getInt("MySQL.port");
-        database = config.getString("MySQL.database");
-        username = config.getString("MySQL.username");
-        password = config.getString("MySQL.password");
-
+        mysql = config.getBoolean("Settings.mysql");
         dateFormat = config.getString("Settings.dateFormat");
+        commandAliases = config.getString("Settings.commandAliases");
+
+        if (mysql) {
+            host = config.getString("MySQL.host");
+            port = config.getInt("MySQL.port");
+            database = config.getString("MySQL.database");
+            username = config.getString("MySQL.username");
+            password = config.getString("MySQL.password");
+        }
 
         onlyPlayer = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlyPlayer"));
         noPermission = ChatColor.translateAlternateColorCodes('&', config.getString("Language.noPermission"));
@@ -127,8 +147,6 @@ public class BungeeOnlineTime extends Plugin {
         resetAllBefore = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetAllBefore"));
         resetPlayerBefore = ChatColor.translateAlternateColorCodes('&', config.getString("Language.resetPlayerBefore"));
     }
-
-    public static String dateFormat = "dd/MM/yyyy";
 
     public static String onlyPlayer = "&7This command can only be executed by players.";
     public static String noPermission = "&7You do not have access to this command.";

@@ -1,7 +1,7 @@
 package lu.r3flexi0n.bungeeonlinetime;
 
-import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -12,11 +12,14 @@ import net.md_5.bungee.event.EventHandler;
 
 public class OnlineTimeListener implements Listener {
 
-    public static final HashMap<UUID, Long> joinTimes = new HashMap<>();
+    public static final Map<UUID, Long> JOIN_TIMES = new HashMap<>();
 
     @EventHandler
     public void onJoin(PostLoginEvent e) {
-        joinTimes.put(e.getPlayer().getUniqueId(), System.currentTimeMillis());
+        ProxiedPlayer player = e.getPlayer();
+        if (player.hasPermission("onlinetime.save")) {
+            JOIN_TIMES.put(player.getUniqueId(), System.currentTimeMillis());
+        }
     }
 
     @EventHandler
@@ -24,10 +27,14 @@ public class OnlineTimeListener implements Listener {
         ProxiedPlayer player = e.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        long joinTime = joinTimes.get(uuid);
+        if (!player.hasPermission("onlinetime.save")) {
+            return;
+        }
+
+        long joinTime = JOIN_TIMES.get(uuid);
         long leaveTime = System.currentTimeMillis();
 
-        joinTimes.remove(uuid);
+        JOIN_TIMES.remove(uuid);
 
         if (leaveTime - joinTime < 5000) {
             return;
@@ -35,8 +42,8 @@ public class OnlineTimeListener implements Listener {
 
         ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
             try {
-                BungeeOnlineTime.mysql.addOnlineTime(uuid, joinTime, leaveTime);
-            } catch (SQLException | ClassNotFoundException ex) {
+                BungeeOnlineTime.sql.addOnlineTime(uuid, joinTime, leaveTime);
+            } catch (Exception ex) {
                 player.sendMessage(BungeeOnlineTime.errorSaving);
             }
         });
