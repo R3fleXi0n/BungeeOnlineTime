@@ -2,6 +2,8 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import lu.r3flexi0n.bungeeonlinetime.database.MySQL;
 import lu.r3flexi0n.bungeeonlinetime.database.SQL;
 import lu.r3flexi0n.bungeeonlinetime.database.SQLite;
@@ -20,6 +22,7 @@ public class BungeeOnlineTime extends Plugin {
     public static boolean mysql = false;
     public static String dateFormat = "dd/MM/yyyy";
     public static String commandAliases = "ot,pt,playtime";
+    public static List<String> disabledServers = Arrays.asList("lobby");
 
     private String host, database, username, password;
     private Integer port;
@@ -50,6 +53,7 @@ public class BungeeOnlineTime extends Plugin {
 
             sql.openConnection();
             sql.createTable();
+
         } catch (Exception ex) {
             System.out.println("[BungeeOnlineTime] Error while connecting to SQL.");
             ex.printStackTrace();
@@ -78,6 +82,7 @@ public class BungeeOnlineTime extends Plugin {
         addDefault(config, "Settings.mysql", mysql);
         addDefault(config, "Settings.dateFormat", dateFormat);
         addDefault(config, "Settings.commandAliases", commandAliases);
+        addDefault(config, "Settings.disabledServers", disabledServers);
 
         addDefault(config, "MySQL.host", "localhost");
         addDefault(config, "MySQL.port", 3306);
@@ -119,6 +124,7 @@ public class BungeeOnlineTime extends Plugin {
         mysql = config.getBoolean("Settings.mysql");
         dateFormat = config.getString("Settings.dateFormat");
         commandAliases = config.getString("Settings.commandAliases");
+        disabledServers = config.getStringList("Settings.disabledServers");
 
         if (mysql) {
             host = config.getString("MySQL.host");

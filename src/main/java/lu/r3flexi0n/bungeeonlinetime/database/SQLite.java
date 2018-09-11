@@ -14,6 +14,6 @@ public class SQLite extends SQL {
     @Override
     public void openConnection() throws Exception {
         Class.forName("org.sqlite.JDBC");
-        connection = DriverManager.getConnection("jdbc:sqlite:" + file.getPath());
+        setConnection(DriverManager.getConnection("jdbc:sqlite:" + file.getPath()));
     }
 }
