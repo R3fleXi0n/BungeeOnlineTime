@@ -56,16 +56,16 @@ public abstract class SQL {
             openConnection();
         }
 
-        int onlineTime = 0;
+        long onlineTime = 0;
         OnlineTime time = OnlineTimeListener.ONLINE_TIMES.get(uuid);
         if (time != null) {
-            onlineTime = (int) ((System.currentTimeMillis() - time.getJoinTime() - time.getAFK()) / 1000);
+            onlineTime = (System.currentTimeMillis() - time.getJoinTime() - time.getAFK()) / 1000;
         }
 
         Statement statement = connection.createStatement();
         ResultSet resultset = statement.executeQuery(sql);
         while (resultset.next()) {
-            onlineTime += (int) (resultset.getLong("time") / 1000);
+            onlineTime += resultset.getLong("time") / 1000;
         }
 
         resultset.close();

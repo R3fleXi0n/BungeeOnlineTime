@@ -14,17 +14,39 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 import lu.r3flexi0n.bungeeonlinetime.BungeeOnlineTime;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.config.Configuration;
 
 public class Utils {
+
+    public static void addDefault(Configuration config, String path, Object value) {
+        if (!config.contains(path)) {
+            config.set(path, value);
+        }
+    }
 
     public static Date getDate(String date) throws ParseException {
         DateFormat format = new SimpleDateFormat(BungeeOnlineTime.dateFormat);
         return format.parse(date);
     }
 
+    public static String getName(UUID uuid) {
+        ProxiedPlayer player = ProxyServer.getInstance().getPlayer(uuid);
+        if (player != null) {
+            return player.getName();
+        }
+        try {
+            return getNameFromMojang(uuid);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return "?";
+        }
+    }
+
     private static final JsonParser JSON = new JsonParser();
 
-    public static String getName(UUID uuid) throws IOException {
+    public static String getNameFromMojang(UUID uuid) throws IOException {
         URL url = new URL("https://api.mojang.com/user/profiles/" + uuid.toString().replace("-", "") + "/names");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         InputStreamReader reader = new InputStreamReader(connection.getInputStream());
@@ -41,7 +63,20 @@ public class Utils {
         return object.get("name").getAsString();
     }
 
-    public static UUID getUUID(String name) throws IOException {
+    public static UUID getUUID(String name) {
+        ProxiedPlayer player = ProxyServer.getInstance().getPlayer(name);
+        if (player != null) {
+            return player.getUniqueId();
+        }
+        try {
+            return getUUIDFromMojang(name);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static UUID getUUIDFromMojang(String name) throws IOException {
         URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         InputStreamReader reader = new InputStreamReader(connection.getInputStream());
@@ -57,4 +92,5 @@ public class Utils {
         String uuid = object.get("id").getAsString();
         return UUID.fromString(uuid.replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
     }
+
 }

@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.UUID;
+import lu.r3flexi0n.bungeeonlinetime.utils.Language;
 import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
@@ -21,7 +22,7 @@ public class OnlineTimeCommand extends Command {
     public void execute(CommandSender sender, String[] args) {
 
         if (!(sender instanceof ProxiedPlayer)) {
-            sender.sendMessage(BungeeOnlineTime.onlyPlayer);
+            sender.sendMessage(Language.onlyPlayer);
             return;
         }
         ProxiedPlayer player = (ProxiedPlayer) sender;
@@ -29,7 +30,7 @@ public class OnlineTimeCommand extends Command {
         if (args.length == 0) {
 
             if (!player.hasPermission("onlinetime.own")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -40,13 +41,13 @@ public class OnlineTimeCommand extends Command {
                     int hours = (int) (seconds / 3600);
                     int minutes = (int) ((seconds % 3600) / 60);
 
-                    player.sendMessage(BungeeOnlineTime.onlineTime
+                    player.sendMessage(Language.onlineTime
                             .replace("%PLAYER%", player.getName())
                             .replace("%HOURS%", String.valueOf(hours))
                             .replace("%MINUTES%", String.valueOf(minutes)));
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -54,7 +55,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 2 && args[0].equals("get")) {
 
             if (!player.hasPermission("onlinetime.others")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -63,7 +64,7 @@ public class OnlineTimeCommand extends Command {
 
                     UUID uuid = Utils.getUUID(args[1]);
                     if (uuid == null) {
-                        player.sendMessage(BungeeOnlineTime.playerNotFound
+                        player.sendMessage(Language.playerNotFound
                                 .replace("%PLAYER%", args[1]));
                         return;
                     }
@@ -72,13 +73,13 @@ public class OnlineTimeCommand extends Command {
                     int hours = (int) (seconds / 3600);
                     int minutes = (int) ((seconds % 3600) / 60);
 
-                    player.sendMessage(BungeeOnlineTime.onlineTime
+                    player.sendMessage(Language.onlineTime
                             .replace("%PLAYER%", args[1])
                             .replace("%HOURS%", String.valueOf(hours))
                             .replace("%MINUTES%", String.valueOf(minutes)));
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -86,7 +87,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 3 && args[0].equals("get")) {
 
             if (!player.hasPermission("onlinetime.others.since")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -94,7 +95,7 @@ public class OnlineTimeCommand extends Command {
             try {
                 date = Utils.getDate(args[2]);
             } catch (ParseException ex) {
-                player.sendMessage(BungeeOnlineTime.wrongFormat
+                player.sendMessage(Language.wrongFormat
                         .replace("%FORMAT%", BungeeOnlineTime.dateFormat));
                 return;
             }
@@ -104,7 +105,7 @@ public class OnlineTimeCommand extends Command {
 
                     UUID uuid = Utils.getUUID(args[1]);
                     if (uuid == null) {
-                        player.sendMessage(BungeeOnlineTime.playerNotFound
+                        player.sendMessage(Language.playerNotFound
                                 .replace("%PLAYER%", args[1]));
                         return;
                     }
@@ -113,14 +114,14 @@ public class OnlineTimeCommand extends Command {
                     int hours = (int) (seconds / 3600);
                     int minutes = (int) ((seconds % 3600) / 60);
 
-                    player.sendMessage(BungeeOnlineTime.onlineTimeSince
+                    player.sendMessage(Language.onlineTimeSince
                             .replace("%PLAYER%", args[1])
                             .replace("%DATE%", args[2])
                             .replace("%HOURS%", String.valueOf(hours))
                             .replace("%MINUTES%", String.valueOf(minutes)));
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -128,7 +129,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 1 && args[0].equalsIgnoreCase("top")) {
 
             if (!player.hasPermission("onlinetime.top")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -138,7 +139,7 @@ public class OnlineTimeCommand extends Command {
                     LinkedHashMap<UUID, Long> top = BungeeOnlineTime.sql.getTopOnlineTimes(10, 0);
 
                     StringBuilder builder = new StringBuilder();
-                    builder.append(BungeeOnlineTime.topTimeAbove);
+                    builder.append(Language.topTimeAbove);
                     builder.append("\n");
                     for (Entry<UUID, Long> entries : top.entrySet()) {
 
@@ -151,18 +152,18 @@ public class OnlineTimeCommand extends Command {
                         int hours = (int) (seconds / 3600);
                         int minutes = (int) ((seconds % 3600) / 60);
 
-                        builder.append(BungeeOnlineTime.topTime
+                        builder.append(Language.topTime
                                 .replace("%PLAYER%", name)
                                 .replace("%HOURS%", String.valueOf(hours))
                                 .replace("%MINUTES%", String.valueOf(minutes)));
                         builder.append("\n");
                     }
-                    builder.append(BungeeOnlineTime.topTimeBelow);
+                    builder.append(Language.topTimeBelow);
 
                     player.sendMessage(builder.toString());
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -170,7 +171,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("top")) {
 
             if (!player.hasPermission("onlinetime.top.since")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -178,7 +179,7 @@ public class OnlineTimeCommand extends Command {
             try {
                 date = Utils.getDate(args[1]);
             } catch (ParseException ex) {
-                player.sendMessage(BungeeOnlineTime.wrongFormat
+                player.sendMessage(Language.wrongFormat
                         .replace("%FORMAT%", BungeeOnlineTime.dateFormat));
                 return;
             }
@@ -189,7 +190,7 @@ public class OnlineTimeCommand extends Command {
                     LinkedHashMap<UUID, Long> top = BungeeOnlineTime.sql.getTopOnlineTimes(10, date.getTime());
 
                     StringBuilder builder = new StringBuilder();
-                    builder.append(BungeeOnlineTime.topTimeSinceAbove.replace("%DATE%", args[1]));
+                    builder.append(Language.topTimeSinceAbove.replace("%DATE%", args[1]));
                     builder.append("\n");
                     for (Entry<UUID, Long> entries : top.entrySet()) {
 
@@ -202,18 +203,18 @@ public class OnlineTimeCommand extends Command {
                         int hours = (int) (seconds / 3600);
                         int minutes = (int) ((seconds % 3600) / 60);
 
-                        builder.append(BungeeOnlineTime.topTimeSince
+                        builder.append(Language.topTimeSince
                                 .replace("%PLAYER%", name)
                                 .replace("%HOURS%", String.valueOf(hours))
                                 .replace("%MINUTES%", String.valueOf(minutes)));
                         builder.append("\n");
                     }
-                    builder.append(BungeeOnlineTime.topTimeSinceBelow.replace("%DATE%", args[1]));
+                    builder.append(Language.topTimeSinceBelow.replace("%DATE%", args[1]));
 
                     player.sendMessage(builder.toString());
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -221,7 +222,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 1 && args[0].equalsIgnoreCase("resetall")) {
 
             if (!player.hasPermission("onlinetime.resetall")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -229,10 +230,10 @@ public class OnlineTimeCommand extends Command {
                 try {
 
                     BungeeOnlineTime.sql.resetAll(System.currentTimeMillis());
-                    player.sendMessage(BungeeOnlineTime.resetAll);
+                    player.sendMessage(Language.resetAll);
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -240,7 +241,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("resetall")) {
 
             if (!player.hasPermission("onlinetime.resetall.before")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -248,7 +249,7 @@ public class OnlineTimeCommand extends Command {
             try {
                 date = Utils.getDate(args[1]);
             } catch (ParseException ex) {
-                player.sendMessage(BungeeOnlineTime.wrongFormat
+                player.sendMessage(Language.wrongFormat
                         .replace("%FORMAT%", BungeeOnlineTime.dateFormat));
                 return;
             }
@@ -257,11 +258,11 @@ public class OnlineTimeCommand extends Command {
                 try {
 
                     BungeeOnlineTime.sql.resetAll(date.getTime());
-                    player.sendMessage(BungeeOnlineTime.resetAllBefore
+                    player.sendMessage(Language.resetAllBefore
                             .replace("%DATE%", args[1]));
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -269,7 +270,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("reset")) {
 
             if (!player.hasPermission("onlinetime.reset")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -278,17 +279,17 @@ public class OnlineTimeCommand extends Command {
 
                     UUID uuid = Utils.getUUID(args[1]);
                     if (uuid == null) {
-                        player.sendMessage(BungeeOnlineTime.playerNotFound
+                        player.sendMessage(Language.playerNotFound
                                 .replace("%PLAYER%", args[1]));
                         return;
                     }
 
                     BungeeOnlineTime.sql.reset(uuid, System.currentTimeMillis());
-                    player.sendMessage(BungeeOnlineTime.resetPlayer
+                    player.sendMessage(Language.resetPlayer
                             .replace("%PLAYER%", args[1]));
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
@@ -296,7 +297,7 @@ public class OnlineTimeCommand extends Command {
         } else if (args.length == 3 && args[0].equalsIgnoreCase("reset")) {
 
             if (!player.hasPermission("onlinetime.reset.before")) {
-                player.sendMessage(BungeeOnlineTime.noPermission);
+                player.sendMessage(Language.noPermission);
                 return;
             }
 
@@ -304,7 +305,7 @@ public class OnlineTimeCommand extends Command {
             try {
                 date = Utils.getDate(args[2]);
             } catch (ParseException ex) {
-                player.sendMessage(BungeeOnlineTime.wrongFormat
+                player.sendMessage(Language.wrongFormat
                         .replace("%FORMAT%", BungeeOnlineTime.dateFormat));
                 return;
             }
@@ -314,18 +315,18 @@ public class OnlineTimeCommand extends Command {
 
                     UUID uuid = Utils.getUUID(args[1]);
                     if (uuid == null) {
-                        player.sendMessage(BungeeOnlineTime.playerNotFound
+                        player.sendMessage(Language.playerNotFound
                                 .replace("%PLAYER%", args[1]));
                         return;
                     }
 
                     BungeeOnlineTime.sql.reset(uuid, date.getTime());
-                    player.sendMessage(BungeeOnlineTime.resetPlayerBefore
+                    player.sendMessage(Language.resetPlayerBefore
                             .replace("%PLAYER%", args[1])
                             .replace("%DATE%", args[2]));
 
                 } catch (Exception ex) {
-                    player.sendMessage(BungeeOnlineTime.error);
+                    player.sendMessage(Language.error);
                     ex.printStackTrace();
                 }
             });
