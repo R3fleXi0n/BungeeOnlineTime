@@ -56,22 +56,22 @@ public abstract class SQL {
             openConnection();
         }
 
-        long onlineTime = 0;
-        OnlineTime time = OnlineTimeListener.ONLINE_TIMES.get(uuid);
-        if (time != null) {
-            onlineTime = (System.currentTimeMillis() - time.getJoinTime() - time.getAFK()) / 1000;
+        long time = 0;
+        OnlineTime onlineTime = OnlineTimeListener.ONLINE_TIMES.get(uuid);
+        if (onlineTime != null) {
+            time = System.currentTimeMillis() - onlineTime.getJoinTime() - onlineTime.getAFK();
         }
 
         Statement statement = connection.createStatement();
         ResultSet resultset = statement.executeQuery(sql);
         while (resultset.next()) {
-            onlineTime += resultset.getLong("time") / 1000;
+            time += resultset.getLong("time");
         }
 
         resultset.close();
         statement.close();
 
-        return onlineTime;
+        return time / 1000;
     }
 
     public LinkedHashMap<UUID, Long> getTopOnlineTimes(int amount, long since) throws Exception {
@@ -87,7 +87,15 @@ public abstract class SQL {
         Statement statement = connection.createStatement();
         ResultSet resultset = statement.executeQuery(sql);
         while (resultset.next()) {
-            times.put(UUID.fromString(resultset.getString("uuid")), resultset.getLong("time") / 1000);
+            UUID uuid = UUID.fromString(resultset.getString("uuid"));
+            long time = resultset.getLong("time");
+
+            OnlineTime onlineTime = OnlineTimeListener.ONLINE_TIMES.get(uuid);
+            if (onlineTime != null) {
+                time += (System.currentTimeMillis() - onlineTime.getJoinTime() - onlineTime.getAFK());
+            }
+
+            times.put(uuid, time / 1000);
         }
 
         resultset.close();

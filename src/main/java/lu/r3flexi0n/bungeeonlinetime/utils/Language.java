@@ -13,6 +13,7 @@ public class Language {
     public static String wrongFormat = "&7Wrong format: Enter the date like this &6%FORMAT%&7.";
     public static String onlineTime = "&6%PLAYER%&7's onlinetime: &6%HOURS%&7h &6%MINUTES%&7min";
     public static String onlineTimeSince = "&6%PLAYER%&7's onlinetime since &6%DATE%&7: &6%HOURS%&7h &6%MINUTES%&7min";
+    public static String topTimeLoading = "The Top 10 is loading...";
     public static String topTimeAbove = "&7====== &6Top 10 &7======";
     public static String topTime = "&6%PLAYER%&7: &6%HOURS%&7h &6%MINUTES%&7min";
     public static String topTimeBelow = "&7====== &6Top 10 &7======";
@@ -33,6 +34,7 @@ public class Language {
         Utils.addDefault(config, "Language.wrongFormat", wrongFormat);
         Utils.addDefault(config, "Language.onlineTime", onlineTime);
         Utils.addDefault(config, "Language.onlineTimeSince", onlineTimeSince);
+        Utils.addDefault(config, "Language.topTimeLoading", topTimeLoading);
         Utils.addDefault(config, "Language.topTimeAbove", topTimeAbove);
         Utils.addDefault(config, "Language.topTime", topTime);
         Utils.addDefault(config, "Language.topTimeBelow", topTimeBelow);
@@ -54,6 +56,7 @@ public class Language {
         wrongFormat = ChatColor.translateAlternateColorCodes('&', config.getString("Language.wrongFormat"));
         onlineTime = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlineTime"));
         onlineTimeSince = ChatColor.translateAlternateColorCodes('&', config.getString("Language.onlineTimeSince"));
+        topTimeLoading = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeLoading"));
         topTimeAbove = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeAbove"));
         topTime = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTime"));
         topTimeBelow = ChatColor.translateAlternateColorCodes('&', config.getString("Language.topTimeBelow"));

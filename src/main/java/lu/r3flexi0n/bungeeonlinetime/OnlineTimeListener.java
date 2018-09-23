@@ -31,6 +31,7 @@ public class OnlineTimeListener implements Listener {
     @EventHandler
     public void onSwitch(ServerSwitchEvent e) {
         ProxiedPlayer player = e.getPlayer();
+
         OnlineTime time = ONLINE_TIMES.get(player.getUniqueId());
         if (time == null) {
             return;
@@ -49,12 +50,12 @@ public class OnlineTimeListener implements Listener {
     public void onLeave(PlayerDisconnectEvent e) {
         ProxiedPlayer player = e.getPlayer();
         UUID uuid = player.getUniqueId();
-        OnlineTime time = ONLINE_TIMES.get(uuid);
-        ONLINE_TIMES.remove(uuid);
 
-        if (!player.hasPermission("onlinetime.save")) {
+        OnlineTime time = ONLINE_TIMES.get(uuid);
+        if (time == null) {
             return;
         }
+        ONLINE_TIMES.remove(uuid);
 
         long joinTime = time.getJoinTime();
         long leaveTime = System.currentTimeMillis();

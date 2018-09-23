@@ -133,6 +133,8 @@ public class OnlineTimeCommand extends Command {
                 return;
             }
 
+            player.sendMessage(Language.topTimeLoading);
+
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
 
@@ -183,6 +185,8 @@ public class OnlineTimeCommand extends Command {
                         .replace("%FORMAT%", BungeeOnlineTime.dateFormat));
                 return;
             }
+
+            player.sendMessage(Language.topTimeLoading);
 
             ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
                 try {
