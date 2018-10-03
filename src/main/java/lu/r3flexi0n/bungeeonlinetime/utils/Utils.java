@@ -6,13 +6,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.UUID;
+import javax.net.ssl.HttpsURLConnection;
 import lu.r3flexi0n.bungeeonlinetime.BungeeOnlineTime;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -31,36 +32,31 @@ public class Utils {
         return format.parse(date);
     }
 
+    public static LinkedHashMap<UUID, String> nameCache = new LinkedHashMap<>();
+
     public static String getName(UUID uuid) {
         ProxiedPlayer player = ProxyServer.getInstance().getPlayer(uuid);
         if (player != null) {
             return player.getName();
         }
+
+        String name = nameCache.get(uuid);
+        if (name != null) {
+            return name;
+        }
+
         try {
-            return getNameFromMojang(uuid);
+            name = getNameFromMojang(uuid);
+            if (nameCache.size() > 100) {
+                nameCache.clear();
+            } else {
+                nameCache.put(uuid, name);
+            }
+            return name;
         } catch (IOException ex) {
             ex.printStackTrace();
-            return "?";
-        }
-    }
-
-    private static final JsonParser JSON = new JsonParser();
-
-    public static String getNameFromMojang(UUID uuid) throws IOException {
-        URL url = new URL("https://api.mojang.com/user/profiles/" + uuid.toString().replace("-", "") + "/names");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        InputStreamReader reader = new InputStreamReader(connection.getInputStream());
-        JsonElement element = JSON.parse(reader);
-        if (element.isJsonNull()) {
-            connection.disconnect();
-            reader.close();
             return null;
         }
-        JsonArray array = (JsonArray) element;
-        JsonObject object = (JsonObject) array.get(array.size() - 1);
-        connection.disconnect();
-        reader.close();
-        return object.get("name").getAsString();
     }
 
     public static UUID getUUID(String name) {
@@ -68,6 +64,7 @@ public class Utils {
         if (player != null) {
             return player.getUniqueId();
         }
+
         try {
             return getUUIDFromMojang(name);
         } catch (IOException ex) {
@@ -76,21 +73,35 @@ public class Utils {
         }
     }
 
-    public static UUID getUUIDFromMojang(String name) throws IOException {
-        URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    private static final JsonParser JSON = new JsonParser();
+
+    private static JsonElement getJsonFromURL(String link) throws IOException {
+        URL url = new URL(link);
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         InputStreamReader reader = new InputStreamReader(connection.getInputStream());
         JsonElement element = JSON.parse(reader);
-        if (element.isJsonNull()) {
-            connection.disconnect();
-            reader.close();
+        reader.close();
+        return element;
+    }
+
+    public static String getNameFromMojang(UUID uuid) throws IOException {
+        JsonElement root = getJsonFromURL("https://api.mojang.com/user/profiles/" + uuid.toString().replace("-", "") + "/names");
+        if (!root.isJsonArray()) {
             return null;
         }
-        JsonObject object = (JsonObject) element;
-        connection.disconnect();
-        reader.close();
-        String uuid = object.get("id").getAsString();
-        return UUID.fromString(uuid.replaceFirst("(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"));
+        JsonArray array = (JsonArray) root;
+        JsonObject object = (JsonObject) array.get(array.size() - 1);
+        return object.get("name").getAsString();
+    }
+
+    public static UUID getUUIDFromMojang(String name) throws IOException {
+        JsonElement root = getJsonFromURL("https://api.mojang.com/users/profiles/minecraft/" + name);
+        if (!root.isJsonObject()) {
+            return null;
+        }
+        JsonObject object = (JsonObject) root;
+        String uuid = object.get("id").getAsString().replaceAll("(.{8})(.{4})(.{4})(.{4})(.+)", "$1-$2-$3-$4-$5");
+        return UUID.fromString(uuid);
     }
 
 }

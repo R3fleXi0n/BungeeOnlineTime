@@ -13,7 +13,7 @@ public class Language {
     public static String wrongFormat = "&7Wrong format: Enter the date like this &6%FORMAT%&7.";
     public static String onlineTime = "&6%PLAYER%&7's onlinetime: &6%HOURS%&7h &6%MINUTES%&7min";
     public static String onlineTimeSince = "&6%PLAYER%&7's onlinetime since &6%DATE%&7: &6%HOURS%&7h &6%MINUTES%&7min";
-    public static String topTimeLoading = "The Top 10 is loading...";
+    public static String topTimeLoading = "&7The Top 10 is loading...";
     public static String topTimeAbove = "&7====== &6Top 10 &7======";
     public static String topTime = "&6%PLAYER%&7: &6%HOURS%&7h &6%MINUTES%&7min";
     public static String topTimeBelow = "&7====== &6Top 10 &7======";
