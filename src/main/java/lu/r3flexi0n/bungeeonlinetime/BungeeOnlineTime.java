@@ -2,6 +2,14 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import lu.r3flexi0n.bungeeonlinetime.database.MySQL;
@@ -47,20 +55,34 @@ public class BungeeOnlineTime extends Plugin {
             return;
         }
 
-        try {
-            if (mysql) {
-                sql = new MySQL(host, port, database, username, password);
-            } else {
-                sql = new SQLite(new File(getDataFolder(), "BungeeOnlineTime.db"));
+        if (mysql) {
+
+            sql = new MySQL(host, port, database, username, password);
+
+        } else {
+
+            try {
+                System.out.println("[BungeeOnlineTime] Downloading SQLite...");
+                URL url = downloadSQLite();
+                addLibrary(url);
+                System.out.println("[BungeeOnlineTime] Downloaded SQLite.");
+            } catch (Exception ex) {
+                System.out.println("[BungeeOnlineTime] Error while downloading SQLite.");
+                ex.printStackTrace();
             }
 
+            File dbFile = new File(getDataFolder(), "BungeeOnlineTime.db");
+            sql = new SQLite(dbFile);
+        }
+
+        try {
+            System.out.println("[BungeeOnlineTime] Connecting to SQL...");
             sql.openConnection();
             sql.createTable();
-
+            System.out.println("[BungeeOnlineTime] Connected to SQL.");
         } catch (Exception ex) {
             System.out.println("[BungeeOnlineTime] Error while connecting to SQL.");
             ex.printStackTrace();
-            return;
         }
 
         getProxy().getPluginManager().registerCommand(this, new OnlineTimeCommand("onlinetime", null, commandAliases.split(",")));
@@ -116,5 +138,22 @@ public class BungeeOnlineTime extends Plugin {
         }
 
         Language.load(config);
+    }
+
+    private URL downloadSQLite() throws IOException {
+        URL url = new URL("https://bitbucket.org/xerial/sqlite-jdbc/downloads/sqlite-jdbc-3.23.1.jar");
+        InputStream in = url.openStream();
+        Path path = Paths.get("SQLite.jar");
+        Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
+        in.close();
+        return path.toUri().toURL();
+    }
+
+    private void addLibrary(URL url) throws Exception {
+        URLClassLoader loader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+        Class<URLClassLoader> loaderClass = URLClassLoader.class;
+        Method method = loaderClass.getDeclaredMethod("addURL", URL.class);
+        method.setAccessible(true);
+        method.invoke(loader, new Object[]{url});
     }
 }
