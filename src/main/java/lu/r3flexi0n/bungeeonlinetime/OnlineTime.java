@@ -2,32 +2,20 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 public class OnlineTime {
 
-    private final long joinTime;
+    private final String name;
 
-    private long afk;
+    private final long time;
 
-    private long afkJoin;
-
-    public OnlineTime() {
-        this.joinTime = System.currentTimeMillis();
+    public OnlineTime(String name, long time) {
+        this.name = name;
+        this.time = time;
     }
 
-    public long getJoinTime() {
-        return joinTime;
+    public String getName() {
+        return name;
     }
 
-    public long getAFK() {
-        return afk;
-    }
-
-    public void joinAFK() {
-        afkJoin = System.currentTimeMillis();
-    }
-
-    public void leaveAFK() {
-        if (afkJoin > 0) {
-            afk += System.currentTimeMillis() - afkJoin;
-            afkJoin = 0;
-        }
+    public long getTime() {
+        return time;
     }
 }

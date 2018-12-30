@@ -9,14 +9,15 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lu.r3flexi0n.bungeeonlinetime.database.MySQL;
 import lu.r3flexi0n.bungeeonlinetime.database.SQL;
 import lu.r3flexi0n.bungeeonlinetime.database.SQLite;
 import lu.r3flexi0n.bungeeonlinetime.utils.Language;
-import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -24,27 +25,29 @@ import net.md_5.bungee.config.YamlConfiguration;
 
 public class BungeeOnlineTime extends Plugin {
 
-    public static BungeeOnlineTime instance;
+    public static BungeeOnlineTime INSTANCE;
 
-    public static SQL sql;
+    public static SQL SQL;
 
-    public static boolean mysql = false;
-    public static String dateFormat = "dd/MM/yyyy";
-    public static String commandAliases = "ot,pt,playtime";
-    public static List<String> disabledServers = Arrays.asList("lobby");
+    public static boolean MYSQL_ENABLED = false;
+    public static String COMMAND_ALIASES = "ot,pt,playtime";
+    public static List<String> DISABLED_SERVERS = Arrays.asList("lobby");
+    public static int TOP_ONLINETIMES_LIMIT = 10;
 
     private String host, database, username, password;
     private Integer port;
 
-    public static File configFile;
-    public static ConfigurationProvider configProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
+    public static File CONFIG_FILE;
+    public static ConfigurationProvider CONFIG_PROVIDER = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
     public static final String CHANNEL = "bungeeonlinetime:get";
+
+    public static final Map<UUID, OnlinePlayer> ONLINE_PLAYERS = new HashMap<>();
 
     @Override
     public void onEnable() {
 
-        instance = this;
+        INSTANCE = this;
 
         try {
             createConfig();
@@ -55,9 +58,9 @@ public class BungeeOnlineTime extends Plugin {
             return;
         }
 
-        if (mysql) {
+        if (MYSQL_ENABLED) {
 
-            sql = new MySQL(host, port, database, username, password);
+            SQL = new MySQL(host, port, database, username, password);
 
         } else {
 
@@ -65,27 +68,29 @@ public class BungeeOnlineTime extends Plugin {
                 System.out.println("[BungeeOnlineTime] Downloading SQLite...");
                 URL url = downloadSQLite();
                 addLibrary(url);
-                System.out.println("[BungeeOnlineTime] Downloaded SQLite.");
+                System.out.println("[BungeeOnlineTime] Downloadeded SQLite.");
             } catch (Exception ex) {
                 System.out.println("[BungeeOnlineTime] Error while downloading SQLite.");
                 ex.printStackTrace();
+                return;
             }
 
             File dbFile = new File(getDataFolder(), "BungeeOnlineTime.db");
-            sql = new SQLite(dbFile);
+            SQL = new SQLite(dbFile);
         }
 
         try {
             System.out.println("[BungeeOnlineTime] Connecting to SQL...");
-            sql.openConnection();
-            sql.createTable();
+            SQL.openConnection();
+            SQL.createTable();
             System.out.println("[BungeeOnlineTime] Connected to SQL.");
         } catch (Exception ex) {
             System.out.println("[BungeeOnlineTime] Error while connecting to SQL.");
             ex.printStackTrace();
+            return;
         }
 
-        getProxy().getPluginManager().registerCommand(this, new OnlineTimeCommand("onlinetime", null, commandAliases.split(",")));
+        getProxy().getPluginManager().registerCommand(this, new OnlineTimeCommand("onlinetime", null, COMMAND_ALIASES.split(",")));
         getProxy().getPluginManager().registerListener(this, new OnlineTimeListener());
         getProxy().registerChannel(CHANNEL);
     }
@@ -97,39 +102,39 @@ public class BungeeOnlineTime extends Plugin {
             folder.mkdir();
         }
 
-        configFile = new File(getDataFolder(), "config.yml");
+        CONFIG_FILE = new File(getDataFolder(), "config.yml");
 
-        if (!configFile.exists()) {
-            configFile.createNewFile();
+        if (!CONFIG_FILE.exists()) {
+            CONFIG_FILE.createNewFile();
         }
 
-        Configuration config = configProvider.load(configFile);
+        Configuration config = CONFIG_PROVIDER.load(CONFIG_FILE);
 
-        Utils.addDefault(config, "Settings.mysql", mysql);
-        Utils.addDefault(config, "Settings.dateFormat", dateFormat);
-        Utils.addDefault(config, "Settings.commandAliases", commandAliases);
-        Utils.addDefault(config, "Settings.disabledServers", disabledServers);
+        addDefault(config, "Settings.mysql", MYSQL_ENABLED);
+        addDefault(config, "Settings.commandAliases", COMMAND_ALIASES);
+        addDefault(config, "Settings.disabledServers", DISABLED_SERVERS);
+        addDefault(config, "Settings.topOnlineTimesLimit", TOP_ONLINETIMES_LIMIT);
 
-        Utils.addDefault(config, "MySQL.host", "localhost");
-        Utils.addDefault(config, "MySQL.port", 3306);
-        Utils.addDefault(config, "MySQL.database", "minecraft");
-        Utils.addDefault(config, "MySQL.username", "player");
-        Utils.addDefault(config, "MySQL.password", "abc123");
+        addDefault(config, "MySQL.host", "localhost");
+        addDefault(config, "MySQL.port", 3306);
+        addDefault(config, "MySQL.database", "minecraft");
+        addDefault(config, "MySQL.username", "player");
+        addDefault(config, "MySQL.password", "abc123");
 
         Language.create(config);
 
-        configProvider.save(config, configFile);
+        CONFIG_PROVIDER.save(config, CONFIG_FILE);
     }
 
     private void loadConfig() throws IOException {
-        Configuration config = configProvider.load(configFile);
+        Configuration config = CONFIG_PROVIDER.load(CONFIG_FILE);
 
-        mysql = config.getBoolean("Settings.mysql");
-        dateFormat = config.getString("Settings.dateFormat");
-        commandAliases = config.getString("Settings.commandAliases");
-        disabledServers = config.getStringList("Settings.disabledServers");
+        MYSQL_ENABLED = config.getBoolean("Settings.mysql");
+        COMMAND_ALIASES = config.getString("Settings.commandAliases");
+        DISABLED_SERVERS = config.getStringList("Settings.disabledServers");
+        TOP_ONLINETIMES_LIMIT = config.getInt("Settings.topOnlineTimesLimit");
 
-        if (mysql) {
+        if (MYSQL_ENABLED) {
             host = config.getString("MySQL.host");
             port = config.getInt("MySQL.port");
             database = config.getString("MySQL.database");
@@ -140,12 +145,20 @@ public class BungeeOnlineTime extends Plugin {
         Language.load(config);
     }
 
+    private void addDefault(Configuration config, String path, Object value) {
+        if (!config.contains(path)) {
+            config.set(path, value);
+        }
+    }
+
     private URL downloadSQLite() throws IOException {
-        URL url = new URL("https://bitbucket.org/xerial/sqlite-jdbc/downloads/sqlite-jdbc-3.23.1.jar");
-        InputStream in = url.openStream();
-        Path path = Paths.get("SQLite.jar");
-        Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
-        in.close();
+        Path path = Paths.get("plugins/BungeeOnlineTime/SQLite.jar");
+        if (!Files.exists(path)) {
+            URL url = new URL("https://bitbucket.org/xerial/sqlite-jdbc/downloads/sqlite-jdbc-3.23.1.jar");
+            InputStream in = url.openStream();
+            Files.copy(in, path);
+            in.close();
+        }
         return path.toUri().toURL();
     }
 

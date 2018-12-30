@@ -2,13 +2,12 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import lu.r3flexi0n.bungeeonlinetime.utils.Language;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
@@ -18,13 +17,27 @@ import net.md_5.bungee.event.EventHandler;
 
 public class OnlineTimeListener implements Listener {
 
-    public static final Map<UUID, OnlineTime> ONLINE_TIMES = new HashMap<>();
-
     @EventHandler
     public void onJoin(PostLoginEvent e) {
         ProxiedPlayer player = e.getPlayer();
-        if (player.hasPermission("onlinetime.save")) {
-            ONLINE_TIMES.put(player.getUniqueId(), new OnlineTime());
+        UUID uuid = player.getUniqueId();
+        String name = player.getName();
+
+        if (!player.hasPermission("onlinetime.save")) {
+            return;
+        }
+
+        BungeeOnlineTime.ONLINE_PLAYERS.put(uuid, new OnlinePlayer());
+
+        if (!BungeeOnlineTime.MYSQL_ENABLED) {
+            ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.INSTANCE, () -> {
+                try {
+                    BungeeOnlineTime.SQL.addOnlineTimeSQLite(uuid, name);
+                } catch (Exception ex) {
+                    player.sendMessage(Language.ERROR_SAVING);
+                    ex.printStackTrace();
+                }
+            });
         }
     }
 
@@ -32,44 +45,44 @@ public class OnlineTimeListener implements Listener {
     public void onSwitch(ServerSwitchEvent e) {
         ProxiedPlayer player = e.getPlayer();
 
-        OnlineTime time = ONLINE_TIMES.get(player.getUniqueId());
-        if (time == null) {
+        OnlinePlayer onlinePlayer = BungeeOnlineTime.ONLINE_PLAYERS.get(player.getUniqueId());
+        if (onlinePlayer == null) {
             return;
         }
+
         ServerInfo server = player.getServer().getInfo();
-
-        if (BungeeOnlineTime.disabledServers.contains(server.getName())) {
-            time.joinAFK();
+        if (BungeeOnlineTime.DISABLED_SERVERS.contains(server.getName())) {
+            onlinePlayer.joinAFK();
         } else {
-            time.leaveAFK();
+            onlinePlayer.leaveAFK();
         }
-
     }
 
     @EventHandler
     public void onLeave(PlayerDisconnectEvent e) {
         ProxiedPlayer player = e.getPlayer();
         UUID uuid = player.getUniqueId();
+        String name = player.getName();
 
-        OnlineTime time = ONLINE_TIMES.get(uuid);
-        if (time == null) {
+        OnlinePlayer onlinePlayer = BungeeOnlineTime.ONLINE_PLAYERS.get(uuid);
+        if (onlinePlayer == null) {
             return;
         }
-        ONLINE_TIMES.remove(uuid);
+        BungeeOnlineTime.ONLINE_PLAYERS.remove(uuid);
 
-        long joinTime = time.getJoinTime();
-        long leaveTime = System.currentTimeMillis();
-        long afkTime = time.getAFK();
+        onlinePlayer.leaveAFK();
 
-        if (leaveTime - joinTime - afkTime < 5000) {
+        long time = onlinePlayer.getNoAFKTime();
+        if (time < 5000) {
             return;
         }
 
-        ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
+        ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.INSTANCE, () -> {
             try {
-                BungeeOnlineTime.sql.addOnlineTime(uuid, joinTime, leaveTime, afkTime);
+                BungeeOnlineTime.SQL.updateOnlineTime(uuid, name, time);
             } catch (Exception ex) {
-                player.sendMessage(Language.errorSaving);
+                player.sendMessage(Language.ERROR_SAVING);
+                ex.printStackTrace();
             }
         });
     }
@@ -85,16 +98,16 @@ public class OnlineTimeListener implements Listener {
             return;
         }
         ProxiedPlayer player = (ProxiedPlayer) e.getReceiver();
+        UUID uuid = player.getUniqueId();
+        Server server = player.getServer();
 
-        ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.instance, () -> {
+        ProxyServer.getInstance().getScheduler().runAsync(BungeeOnlineTime.INSTANCE, () -> {
             try {
-
-                long seconds = BungeeOnlineTime.sql.getOnlineTime(player.getUniqueId(), 0);
+                OnlineTime onlineTime = BungeeOnlineTime.SQL.getOnlineTime(uuid);
 
                 ByteArrayDataOutput out = ByteStreams.newDataOutput();
-                out.writeLong(seconds);
-                player.getServer().sendData(BungeeOnlineTime.CHANNEL, out.toByteArray());
-
+                out.writeLong(onlineTime.getTime() / 1000);
+                server.sendData(BungeeOnlineTime.CHANNEL, out.toByteArray());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
