@@ -3,21 +3,28 @@ package lu.r3flexi0n.bungeeonlinetime;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 import lu.r3flexi0n.bungeeonlinetime.database.MySQL;
 import lu.r3flexi0n.bungeeonlinetime.database.SQL;
 import lu.r3flexi0n.bungeeonlinetime.database.SQLite;
+import lu.r3flexi0n.bungeeonlinetime.utils.JarUtil;
 import lu.r3flexi0n.bungeeonlinetime.utils.Language;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -45,8 +52,47 @@ public class BungeeOnlineTime extends Plugin {
     public static final Map<UUID, OnlinePlayer> ONLINE_PLAYERS = new HashMap<>();
 
     @Override
-    public void onEnable() {
+    public void onLoad() {
+        try {
+            loadJars(new File(getDataFolder(), "external"), (URLClassLoader) getClass().getClassLoader());
+        } catch (ClassCastException | IOException | IllegalAccessException | InvocationTargetException ex) {
+            throw new RuntimeException("Could not load required deps.", ex);
+        }
+    }
 
+    private void loadJars(File jarsFolder, URLClassLoader classLoader) throws IOException, IllegalAccessException, InvocationTargetException {
+        if (jarsFolder.exists() && !jarsFolder.isDirectory()) {
+            Files.delete(jarsFolder.toPath());
+        }
+        if (!jarsFolder.exists()) {
+            if (!jarsFolder.mkdirs()) {
+                throw new IOException("Could not create parent directory structure.");
+            }
+        }
+
+        try {
+            Class.forName("org.sqlite.JDBC", false, classLoader);
+        } catch (ClassNotFoundException ignored) {
+            System.out.println("[BungeeOnlineTime] Downloading SQLite...");
+            JarUtil.loadJar("http://central.maven.org/maven2/org/xerial/sqlite-jdbc/3.25.2/sqlite-jdbc-3.25.2.jar",
+                    new File(jarsFolder, "sqlite-jdbc-3.25.2.jar"),
+                    classLoader);
+        }
+
+        try {
+            DriverManager.getDriver("org.sqlite.JDBC");
+        } catch (SQLException ignored) {
+            try {
+                DriverManager.registerDriver((Driver) Class.forName("org.sqlite.JDBC", true, classLoader).newInstance());
+            } catch (ClassNotFoundException | InstantiationException | SQLException ex) {
+                System.out.println("[BungeeOnlineTime] Error while loading SQLite...");
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onEnable() {
         INSTANCE = this;
 
         try {
@@ -63,18 +109,6 @@ public class BungeeOnlineTime extends Plugin {
             SQL = new MySQL(host, port, database, username, password);
 
         } else {
-
-            try {
-                System.out.println("[BungeeOnlineTime] Downloading SQLite...");
-                URL url = downloadSQLite();
-                addLibrary(url);
-                System.out.println("[BungeeOnlineTime] Downloadeded SQLite.");
-            } catch (Exception ex) {
-                System.out.println("[BungeeOnlineTime] Error while downloading SQLite.");
-                ex.printStackTrace();
-                return;
-            }
-
             File dbFile = new File(getDataFolder(), "BungeeOnlineTime.db");
             SQL = new SQLite(dbFile);
         }
@@ -149,24 +183,5 @@ public class BungeeOnlineTime extends Plugin {
         if (!config.contains(path)) {
             config.set(path, value);
         }
-    }
-
-    private URL downloadSQLite() throws IOException {
-        Path path = Paths.get("plugins/BungeeOnlineTime/SQLite.jar");
-        if (!Files.exists(path)) {
-            URL url = new URL("https://bitbucket.org/xerial/sqlite-jdbc/downloads/sqlite-jdbc-3.23.1.jar");
-            InputStream in = url.openStream();
-            Files.copy(in, path);
-            in.close();
-        }
-        return path.toUri().toURL();
-    }
-
-    private void addLibrary(URL url) throws Exception {
-        URLClassLoader loader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-        Class<URLClassLoader> loaderClass = URLClassLoader.class;
-        Method method = loaderClass.getDeclaredMethod("addURL", URL.class);
-        method.setAccessible(true);
-        method.invoke(loader, new Object[]{url});
     }
 }
