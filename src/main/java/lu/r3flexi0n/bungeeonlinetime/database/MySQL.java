@@ -17,7 +17,7 @@ public class MySQL extends SQL {
 
     @Override
     public void openConnection() throws Exception {
-        Class.forName("com.mysql.jdbc.Driver");
+        Class.forName("com.mysql.cj.jdbc.Driver");
         setConnection(DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database, this.username, this.password));
     }
 }
