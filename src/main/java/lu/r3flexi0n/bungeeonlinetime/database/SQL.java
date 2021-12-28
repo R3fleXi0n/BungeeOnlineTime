@@ -1,6 +1,7 @@
 package lu.r3flexi0n.bungeeonlinetime.database;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -49,24 +50,27 @@ public abstract class SQL {
     }
 
     public OnlineTime getOnlineTime(UUID uuid) throws Exception {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE uuid = '" + uuid + "';";
-        return get(sql);
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE uuid = ?;";
+        PreparedStatement p = connection.prepareStatement(sql);
+        p.setString(1, uuid.toString());
+        return get(p);
     }
 
     public OnlineTime getOnlineTime(String name) throws Exception {
-        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE name = '" + name + "';";
-        return get(sql);
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE name = ?;";
+        PreparedStatement p = connection.prepareStatement(sql);
+        p.setString(1, name);
+        return get(p);
     }
 
-    private OnlineTime get(String sql) throws Exception {
+    private OnlineTime get(PreparedStatement statement) throws Exception {
         if (isClosed()) {
             openConnection();
         }
 
         OnlineTime onlineTime = null;
 
-        Statement statement = connection.createStatement();
-        ResultSet resultset = statement.executeQuery(sql);
+        ResultSet resultset = statement.executeQuery();
         if (resultset.next()) {
 
             UUID uuid = UUID.fromString(resultset.getString("uuid"));
