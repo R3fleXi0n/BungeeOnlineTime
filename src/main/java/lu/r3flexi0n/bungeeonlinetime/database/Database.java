@@ -1,6 +1,7 @@
 package lu.r3flexi0n.bungeeonlinetime.database;
 
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTime;
+import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -34,15 +35,48 @@ public abstract class Database {
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
         statement.close();
+    }
 
-        sql = "CREATE INDEX IF NOT EXISTS BungeeOnlineTimeIndex ON BungeeOnlineTime (name, time);";
-        statement = connection.createStatement();
-        statement.executeUpdate(sql);
-        statement.close();
+    public void createIndex() throws SQLException {
+        if (this instanceof MySQLDatabase) {
+
+            String sql = "SHOW INDEXES FROM BungeeOnlineTime;";
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql);
+
+            int count = 0;
+            while (resultSet.next()) {
+                if (resultSet.getString("key_name").equals("BungeeOnlineTimeIndex")) {
+                    count++;
+                }
+            }
+
+            statement.close();
+
+            if (count == 0) {
+                sql = "CREATE INDEX BungeeOnlineTimeIndex ON BungeeOnlineTime (name, time);"; //create index if not exists not available in mysql
+                statement = connection.createStatement();
+                statement.executeUpdate(sql);
+                statement.close();
+            }
+
+        } else {
+
+            String sql = "CREATE INDEX IF NOT EXISTS BungeeOnlineTimeIndex ON BungeeOnlineTime (name, time);";
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(sql);
+            statement.close();
+
+        }
     }
 
     public void updateOnlineTime(String uuid, String name, long time) throws SQLException {
-        String sql = "INSERT OR IGNORE INTO BungeeOnlineTime VALUES (?, ?, ?);";
+        String sql;
+        if (this instanceof MySQLDatabase) {
+            sql = "INSERT IGNORE INTO BungeeOnlineTime VALUES (?, ?, ?);";
+        } else {
+            sql = "INSERT OR IGNORE INTO BungeeOnlineTime VALUES (?, ?, ?);";
+        }
         PreparedStatement statement = connection.prepareStatement(sql);
         statement.setString(1, uuid);
         statement.setString(2, name);

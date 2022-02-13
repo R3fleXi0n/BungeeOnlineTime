@@ -71,6 +71,7 @@ public class BungeeOnlineTimePlugin extends Plugin {
             Utils.log("Connecting to " + database.databaseName + "...");
             database.openConnection();
             database.createTable();
+            database.createIndex();
             Utils.log("Successfully connected to " + database.databaseName + ".");
         } catch (Exception ex) {
             Utils.log("Error while connecting to " + database.databaseName + ". Disabling plugin...");
