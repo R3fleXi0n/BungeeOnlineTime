@@ -10,7 +10,6 @@ import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.plugin.Plugin;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

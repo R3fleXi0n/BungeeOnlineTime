@@ -41,21 +41,18 @@ public class OnlineTimeListener implements Listener {
             return;
         }
 
+        UUID uuid = player.getUniqueId();
         OnlineTimePlayer onlineTimePlayer = new OnlineTimePlayer();
-        plugin.onlineTimePlayers.put(player.getUniqueId(), onlineTimePlayer);
+        plugin.onlineTimePlayers.put(uuid, onlineTimePlayer);
 
         if (usePlaceholderApi) {
-            UUID uuid = player.getUniqueId();
             String name = player.getName();
-
             ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
                 try {
-                    List<OnlineTime> onlineTime = plugin.database.getOnlineTime(uuid.toString());
-                    if (onlineTime.isEmpty()) {
-                        onlineTimePlayer.setTotalOnlineTime(new OnlineTime(uuid, name, 0L));
-                    } else {
-                        onlineTimePlayer.setTotalOnlineTime(onlineTime.get(0));
-                    }
+                    List<OnlineTime> onlineTimes = plugin.database.getOnlineTime(uuid.toString());
+                    long savedOnlineTime = !onlineTimes.isEmpty() ? onlineTimes.get(0).getTime() : 0L;
+                    onlineTimePlayer.setSavedOnlineTime(savedOnlineTime);
+                    sendOnlineTimeToServer(player, savedOnlineTime);
                 } catch (SQLException ex) {
                     Utils.log("Error while loading online time for player " + name + ".");
                     ex.printStackTrace();
@@ -80,7 +77,11 @@ public class OnlineTimeListener implements Listener {
         }
 
         if (usePlaceholderApi) {
-            sendOnlineTimeToServer(server, onlineTimePlayer);
+            Long savedOnlineTime = onlineTimePlayer.getSavedOnlineTime();
+            if (savedOnlineTime != null) {
+                long totalOnlineTime = savedOnlineTime + onlineTimePlayer.getSessionOnlineTime();
+                sendOnlineTimeToServer(player, totalOnlineTime);
+            }
         }
     }
 
@@ -89,7 +90,6 @@ public class OnlineTimeListener implements Listener {
 
         ProxiedPlayer player = e.getPlayer();
         UUID uuid = player.getUniqueId();
-        String name = player.getName();
         OnlineTimePlayer onlinePlayer = plugin.onlineTimePlayers.get(uuid);
         if (onlinePlayer == null) {
             return;
@@ -97,12 +97,12 @@ public class OnlineTimeListener implements Listener {
 
         plugin.onlineTimePlayers.remove(uuid);
 
-        onlinePlayer.leaveDisabledServer();
-
         long time = onlinePlayer.getSessionOnlineTime();
         if (time < 5000L) {
             return;
         }
+
+        String name = player.getName();
 
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
             try {
@@ -114,20 +114,16 @@ public class OnlineTimeListener implements Listener {
         });
     }
 
-    private void sendOnlineTimeToServer(ServerInfo server, OnlineTimePlayer onlineTimePlayer) {
-        OnlineTime totalOnlineTime = onlineTimePlayer.getTotalOnlineTime();
-        if (totalOnlineTime == null) {
+    private void sendOnlineTimeToServer(ProxiedPlayer player, long onlineTime) {
+        if (player == null || player.getServer() == null) {
             return;
         }
-
-        long time = totalOnlineTime.getTime() + onlineTimePlayer.getSessionOnlineTime();
-
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
-            dataOutputStream.writeUTF(totalOnlineTime.getUUID().toString());
-            dataOutputStream.writeLong(time / 1000);
-            server.sendData(plugin.pluginMessageChannel, byteArrayOutputStream.toByteArray());
+            dataOutputStream.writeUTF(player.getUniqueId().toString());
+            dataOutputStream.writeLong(onlineTime / 1000);
+            player.getServer().sendData(plugin.pluginMessageChannel, byteArrayOutputStream.toByteArray());
             dataOutputStream.close();
         } catch (IOException ex) {
             Utils.log("Error while sending plugin message.");

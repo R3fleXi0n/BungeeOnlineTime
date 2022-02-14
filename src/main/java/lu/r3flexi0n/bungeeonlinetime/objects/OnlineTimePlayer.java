@@ -2,7 +2,7 @@ package lu.r3flexi0n.bungeeonlinetime.objects;
 
 public class OnlineTimePlayer {
 
-    private OnlineTime totalOnlineTime = null;
+    private Long savedOnlineTime = null;
 
     private final long joinProxyTimestamp;
 
@@ -14,17 +14,24 @@ public class OnlineTimePlayer {
         this.joinProxyTimestamp = System.currentTimeMillis();
     }
 
-    public void setTotalOnlineTime(OnlineTime onlineTime) {
-        this.totalOnlineTime = onlineTime;
+    public void setSavedOnlineTime(long onlineTime) {
+        this.savedOnlineTime = onlineTime;
     }
 
-    public OnlineTime getTotalOnlineTime() {
-        return totalOnlineTime;
+    public Long getSavedOnlineTime() {
+        return savedOnlineTime;
     }
 
     public long getSessionOnlineTime() {
-        leaveDisabledServer();
-        return System.currentTimeMillis() - joinProxyTimestamp - timeOnDisabledServers;
+        return System.currentTimeMillis() - joinProxyTimestamp - getTimeOnDisabledServers();
+    }
+
+    private long getTimeOnDisabledServers() {
+        long time = timeOnDisabledServers;
+        if (joinDisabledServerTimestamp > 0) {
+            time += (System.currentTimeMillis() - joinDisabledServerTimestamp);
+        }
+        return time;
     }
 
     public void joinDisabledServer() {
