@@ -1,7 +1,6 @@
 package lu.r3flexi0n.bungeeonlinetime.database;
 
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTime;
-import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -40,21 +39,19 @@ public abstract class Database {
     public void createIndex() throws SQLException {
         if (this instanceof MySQLDatabase) {
 
-            String sql = "SHOW INDEXES FROM BungeeOnlineTime;";
+            String sql = "SHOW INDEX FROM BungeeOnlineTime WHERE Key_Name = 'BungeeOnlineTimeIndex';";
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql);
 
             int count = 0;
             while (resultSet.next()) {
-                if (resultSet.getString("key_name").equals("BungeeOnlineTimeIndex")) {
-                    count++;
-                }
+                count++;
             }
 
             statement.close();
 
-            if (count == 0) {
-                sql = "CREATE INDEX BungeeOnlineTimeIndex ON BungeeOnlineTime (name, time);"; //create index if not exists not available in mysql
+            if (count == 0) { //CREATE INDEX IF NOT EXISTS is not available in mysql
+                sql = "CREATE INDEX BungeeOnlineTimeIndex ON BungeeOnlineTime (name, time);";
                 statement = connection.createStatement();
                 statement.executeUpdate(sql);
                 statement.close();
