@@ -3,29 +3,41 @@ package lu.r3flexi0n.bungeeonlinetime.database;
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTime;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class Database {
 
     public final String databaseName;
 
-    private final String databaseClass, databaseUrl;
+    public final String[] databaseClass;
 
-    public Database(String databaseName, String databaseClass, String databaseUrl) {
+    public final String databaseUrl;
+
+    public Properties databaseProperties = new Properties();
+
+    public Database(String databaseName, String[] databaseClass, String databaseUrl) {
         this.databaseName = databaseName;
         this.databaseClass = databaseClass;
         this.databaseUrl = databaseUrl;
     }
 
+    private boolean isSupported() {
+        for (String className : databaseClass) {
+            try {
+                Class.forName(className);
+                return true;
+            } catch (ClassNotFoundException ex) {
+            }
+        }
+        return false;
+    }
+
     private Connection connection;
 
-    public void openConnection() throws ClassNotFoundException, SQLException {
+    public void openConnection() throws SQLException {
         if (connection == null) {
-            Class.forName(databaseClass);
-            connection = DriverManager.getConnection(databaseUrl);
+            boolean supported = isSupported(); //todo
+            connection = DriverManager.getConnection(databaseUrl, databaseProperties);
         }
     }
 

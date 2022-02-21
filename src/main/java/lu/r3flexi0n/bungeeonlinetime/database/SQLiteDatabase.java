@@ -7,7 +7,7 @@ public class SQLiteDatabase extends Database {
     public SQLiteDatabase(File file) {
         super(
                 "SQLite",
-                "org.sqlite.JDBC",
+                new String[]{"org.sqlite.JDBC"},
                 "jdbc:sqlite:" + file.getPath()
         );
     }
