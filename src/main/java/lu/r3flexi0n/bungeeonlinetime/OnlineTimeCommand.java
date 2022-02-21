@@ -2,14 +2,13 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTime;
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTimePlayer;
+import lu.r3flexi0n.bungeeonlinetime.utils.AsyncTask;
 import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,10 +99,15 @@ public class OnlineTimeCommand extends Command {
     }
 
     private void sendOnlineTime(ProxiedPlayer player, String targetPlayerName) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            try {
+        new AsyncTask(plugin).execute(new AsyncTask.Task<List<OnlineTime>>() {
 
-                List<OnlineTime> onlineTimes = plugin.database.getOnlineTime(targetPlayerName);
+            @Override
+            public List<OnlineTime> doTask() throws Exception {
+                return plugin.database.getOnlineTime(targetPlayerName);
+            }
+
+            @Override
+            public void onSuccess(List<OnlineTime> onlineTimes) {
                 if (onlineTimes.isEmpty()) {
                     HashMap<String, Object> placeholders = new HashMap<>();
                     placeholders.put("%PLAYER%", targetPlayerName);
@@ -131,26 +135,35 @@ public class OnlineTimeCommand extends Command {
                     placeholders.put("%MINUTES%", minutes);
                     sendMessage(player, "Language.onlineTime", placeholders);
                 }
+            }
 
-            } catch (SQLException ex) {
+            @Override
+            public void onError(Exception exception) {
                 sendMessage(player, "Language.error");
                 Utils.log("Error while loading online time for player " + targetPlayerName + ".");
-                ex.printStackTrace();
+                exception.printStackTrace();
             }
+
         });
     }
 
     private void sendTopOnlineTimes(ProxiedPlayer player, int page) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            try {
+        new AsyncTask(plugin).execute(new AsyncTask.Task<List<OnlineTime>>() {
+
+            @Override
+            public List<OnlineTime> doTask() throws Exception {
+                return plugin.database.getTopOnlineTimes(page, topOnlineTimePageLimit);
+            }
+
+            @Override
+            public void onSuccess(List<OnlineTime> onlineTimes) {
+                int rank = (page - 1) * topOnlineTimePageLimit + 1;
 
                 HashMap<String, Object> headerPlaceholders = new HashMap<>();
                 headerPlaceholders.put("%PAGE%", page);
 
-                int rank = (page - 1) * topOnlineTimePageLimit + 1;
-
                 sendMessage(player, "Language.topTimeAbove", headerPlaceholders);
-                for (OnlineTime onlineTime : plugin.database.getTopOnlineTimes(page, topOnlineTimePageLimit)) {
+                for (OnlineTime onlineTime : onlineTimes) {
                     UUID uuid = onlineTime.getUUID();
                     String name = onlineTime.getName();
                     long totalOnlineTime = onlineTime.getTime();
@@ -174,46 +187,65 @@ public class OnlineTimeCommand extends Command {
                     rank++;
                 }
                 sendMessage(player, "Language.topTimeBelow", headerPlaceholders);
+            }
 
-            } catch (SQLException ex) {
+            @Override
+            public void onError(Exception exception) {
                 sendMessage(player, "Language.error");
                 Utils.log("Error while loading top online times.");
-                ex.printStackTrace();
+                exception.printStackTrace();
             }
+
         });
     }
 
     private void sendReset(ProxiedPlayer player, String targetPlayerName) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            try {
+        new AsyncTask(plugin).execute(new AsyncTask.Task<Void>() {
 
+            @Override
+            public Void doTask() throws Exception {
                 plugin.database.resetOnlineTime(targetPlayerName);
+                return null;
+            }
 
+            @Override
+            public void onSuccess(Void onlineTimes) {
                 HashMap<String, Object> placeholders = new HashMap<>();
                 placeholders.put("%PLAYER%", targetPlayerName);
                 sendMessage(player, "Language.resetPlayer", placeholders);
+            }
 
-            } catch (SQLException ex) {
+            @Override
+            public void onError(Exception exception) {
                 sendMessage(player, "Language.error");
                 Utils.log("Error while resetting online time for player " + targetPlayerName + ".");
-                ex.printStackTrace();
+                exception.printStackTrace();
             }
+
         });
     }
 
     private void sendResetAll(ProxiedPlayer player) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            try {
+        new AsyncTask(plugin).execute(new AsyncTask.Task<Void>() {
 
+            @Override
+            public Void doTask() throws Exception {
                 plugin.database.resetAllOnlineTimes();
+                return null;
+            }
 
+            @Override
+            public void onSuccess(Void onlineTimes) {
                 sendMessage(player, "Language.resetAll");
+            }
 
-            } catch (SQLException ex) {
+            @Override
+            public void onError(Exception exception) {
                 sendMessage(player, "Language.error");
                 Utils.log("Error while resetting online time database.");
-                ex.printStackTrace();
+                exception.printStackTrace();
             }
+
         });
     }
 

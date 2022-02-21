@@ -2,8 +2,8 @@ package lu.r3flexi0n.bungeeonlinetime;
 
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTime;
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTimePlayer;
+import lu.r3flexi0n.bungeeonlinetime.utils.AsyncTask;
 import lu.r3flexi0n.bungeeonlinetime.utils.Utils;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
@@ -15,7 +15,6 @@ import net.md_5.bungee.event.EventHandler;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,16 +46,26 @@ public class OnlineTimeListener implements Listener {
 
         if (usePlaceholderApi) {
             String name = player.getName();
-            ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-                try {
-                    List<OnlineTime> onlineTimes = plugin.database.getOnlineTime(uuid.toString());
+            new AsyncTask(plugin).execute(new AsyncTask.Task<List<OnlineTime>>() {
+
+                @Override
+                public List<OnlineTime> doTask() throws Exception {
+                    return plugin.database.getOnlineTime(uuid.toString());
+                }
+
+                @Override
+                public void onSuccess(List<OnlineTime> onlineTimes) {
                     long savedOnlineTime = !onlineTimes.isEmpty() ? onlineTimes.get(0).getTime() : 0L;
                     onlineTimePlayer.setSavedOnlineTime(savedOnlineTime);
                     sendOnlineTimeToServer(player, savedOnlineTime);
-                } catch (SQLException ex) {
-                    Utils.log("Error while loading online time for player " + name + ".");
-                    ex.printStackTrace();
                 }
+
+                @Override
+                public void onError(Exception exception) {
+                    Utils.log("Error while loading online time for player " + name + ".");
+                    exception.printStackTrace();
+                }
+
             });
         }
     }
@@ -104,13 +113,24 @@ public class OnlineTimeListener implements Listener {
 
         String name = player.getName();
 
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            try {
+        new AsyncTask(plugin).execute(new AsyncTask.Task<Void>() {
+
+            @Override
+            public Void doTask() throws Exception {
                 plugin.database.updateOnlineTime(uuid.toString(), name, time);
-            } catch (SQLException ex) {
-                Utils.log("Error while saving online time for player " + name + ".");
-                ex.printStackTrace();
+                return null;
             }
+
+            @Override
+            public void onSuccess(Void v) {
+            }
+
+            @Override
+            public void onError(Exception exception) {
+                Utils.log("Error while saving online time for player " + name + ".");
+                exception.printStackTrace();
+            }
+
         });
     }
 

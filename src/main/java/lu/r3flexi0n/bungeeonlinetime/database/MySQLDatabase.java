@@ -11,5 +11,6 @@ public class MySQLDatabase extends Database {
 
         databaseProperties.put("user", username);
         databaseProperties.put("password", password);
+        databaseProperties.put("autoReconnect", "true");
     }
 }

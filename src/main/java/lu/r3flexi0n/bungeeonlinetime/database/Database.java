@@ -3,7 +3,10 @@ package lu.r3flexi0n.bungeeonlinetime.database;
 import lu.r3flexi0n.bungeeonlinetime.objects.OnlineTime;
 
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 
 public abstract class Database {
 
@@ -151,6 +154,8 @@ public abstract class Database {
         return result;
     }
 
+    /*
+
     public void generateFakeDatabase() throws SQLException {
         connection.setAutoCommit(false);
 
@@ -175,4 +180,6 @@ public abstract class Database {
         }
         return String.valueOf(randomString);
     }
+
+    */
 }
