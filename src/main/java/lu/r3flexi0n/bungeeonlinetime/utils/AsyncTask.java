@@ -17,7 +17,6 @@ public class AsyncTask {
                 task.onSuccess(task.doTask());
             } catch (Exception ex) {
                 if (retry) {
-                    Utils.log("retrying--------------------------------------");
                     execute(task, false);
                     return;
                 }
