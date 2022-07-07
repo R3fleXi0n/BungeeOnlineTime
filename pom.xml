@@ -5,7 +5,7 @@
 
     <groupId>lu.r3flexi0n</groupId>
     <artifactId>BungeeOnlineTime</artifactId>
-    <version>8.3</version>
+    <version>8.4-BM</version>
     <packaging>jar</packaging>
 
     <repositories>
@@ -40,7 +40,7 @@
 
     <build>
 
-        <finalName>${project.artifactId}-without-SQLite</finalName>
+        <finalName>${project.artifactId}-${project.version}-without-SQLite</finalName>
 
         <plugins>
             <plugin>
@@ -52,7 +52,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>${project.artifactId}</finalName>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
                             <artifactSet>
                                 <includes>
                                     <include>org.xerial:sqlite-jdbc</include>

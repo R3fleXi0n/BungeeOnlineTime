@@ -31,36 +31,36 @@ public class OnlineTimeCommand extends Command {
     @Override
     public void execute(CommandSender sender, String[] args) {
 
-        if (!(sender instanceof ProxiedPlayer)) {
-            sendMessage(sender, "Language.onlyPlayer");
-            return;
-        }
-        ProxiedPlayer player = (ProxiedPlayer) sender;
 
         if (args.length == 0) {
 
-            if (!player.hasPermission("onlinetime.own")) {
-                sendMessage(player, "Language.noPermission");
+            if (!sender.hasPermission("onlinetime.own")) {
+                sendMessage(sender, "Language.noPermission");
                 return;
             }
 
-            String name = player.getName();
-            sendOnlineTime(player, name);
+            if (!(sender instanceof ProxiedPlayer)) {
+                sendMessage(sender, "Language.onlyPlayer");
+                return;
+            }
+
+            String name = sender.getName();
+            sendOnlineTime(sender, name);
 
         } else if (args.length == 2 && args[0].equals("get")) {
 
-            if (!player.hasPermission("onlinetime.others")) {
-                sendMessage(player, "Language.noPermission");
+            if (!sender.hasPermission("onlinetime.others")) {
+                sendMessage(sender, "Language.noPermission");
                 return;
             }
 
             String name = args[1];
-            sendOnlineTime(player, name);
+            sendOnlineTime(sender, name);
 
         } else if ((args.length == 1 || args.length == 2) && args[0].equalsIgnoreCase("top")) {
 
-            if (!player.hasPermission("onlinetime.top")) {
-                sendMessage(player, "Language.noPermission");
+            if (!sender.hasPermission("onlinetime.top")) {
+                sendMessage(sender, "Language.noPermission");
                 return;
             }
 
@@ -70,17 +70,17 @@ public class OnlineTimeCommand extends Command {
             } catch (Exception ex) {
                 page = 1;
             }
-            sendTopOnlineTimes(player, page);
+            sendTopOnlineTimes(sender, page);
 
         } else if (args.length == 2 && args[0].equalsIgnoreCase("reset")) {
 
-            if (!player.hasPermission("onlinetime.reset")) {
-                sendMessage(player, "Language.noPermission");
+            if (!sender.hasPermission("onlinetime.reset")) {
+                sendMessage(sender, "Language.noPermission");
                 return;
             }
 
             String name = args[1];
-            sendReset(player, name);
+            sendReset(sender, name);
 
         } else if (args.length == 1 && args[0].equalsIgnoreCase("resetall")) {
 
@@ -88,17 +88,16 @@ public class OnlineTimeCommand extends Command {
                 sendMessage(player, "Language.noPermission");
                 return;
             }
-
-            sendResetAll(player);
+            sendResetAll(sender);
 
         } else {
 
-            sendMessage(player, "Language.help");
+            sendMessage(sender, "Language.help");
 
         }
     }
 
-    private void sendOnlineTime(ProxiedPlayer player, String targetPlayerName) {
+    private void sendOnlineTime(CommandSender player, String targetPlayerName) {
         new AsyncTask(plugin).execute(new AsyncTask.Task<List<OnlineTime>>() {
 
             @Override
@@ -147,7 +146,7 @@ public class OnlineTimeCommand extends Command {
         });
     }
 
-    private void sendTopOnlineTimes(ProxiedPlayer player, int page) {
+    private void sendTopOnlineTimes(CommandSender player, int page) {
         new AsyncTask(plugin).execute(new AsyncTask.Task<List<OnlineTime>>() {
 
             @Override
@@ -199,7 +198,7 @@ public class OnlineTimeCommand extends Command {
         });
     }
 
-    private void sendReset(ProxiedPlayer player, String targetPlayerName) {
+    private void sendReset(CommandSender player, String targetPlayerName) {
         new AsyncTask(plugin).execute(new AsyncTask.Task<Void>() {
 
             @Override
@@ -225,7 +224,7 @@ public class OnlineTimeCommand extends Command {
         });
     }
 
-    private void sendResetAll(ProxiedPlayer player) {
+    private void sendResetAll(CommandSender player) {
         new AsyncTask(plugin).execute(new AsyncTask.Task<Void>() {
 
             @Override

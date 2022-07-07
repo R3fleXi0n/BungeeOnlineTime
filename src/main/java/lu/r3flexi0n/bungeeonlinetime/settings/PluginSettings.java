@@ -63,6 +63,7 @@ public class PluginSettings {
     private HashMap<String, Object> getDefaultLanguageSettings() {
         HashMap<String, Object> settings = new HashMap<>();
         settings.put("Language.onlyPlayer", "&7This command can only be executed by players.");
+        settings.put("Language.onlyConsole", "&7This command can only be executed by the Console.");
         settings.put("Language.noPermission", "&7You do not have access to this command.");
         settings.put("Language.error", "&7An error occured.");
         settings.put("Language.playerNotFound", "&7Player '&6%PLAYER%&7' was not found.");
